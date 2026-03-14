@@ -233,20 +233,21 @@ input[type="date"]::-webkit-calendar-picker-indicator{
   display:flex;flex-direction:column;align-items:center;gap:3px;
 }
 #q-skt{
-  font-family:'Tiro Devanagari Sanskrit',serif;
-  font-size:clamp(.8rem,3.6vw,1.08rem);
-  color:var(--gold);line-height:1.5;
+  font-family:'Tiro Devanagari Sanskrit','Noto Serif Devanagari',serif;
+  font-size:clamp(.82rem,3.6vw,1.1rem);
+  color:var(--gold);line-height:1.6;
   filter:drop-shadow(0 0 8px rgba(200,148,42,.4));
+  text-align:center;
 }
 #q-src{
-  font-family:'IM Fell English',serif;font-style:italic;
-  font-size:clamp(.52rem,2vw,.68rem);
-  color:var(--gold);opacity:.8;letter-spacing:.08em;margin-top:2px;
+  font-size:clamp(.54rem,2vw,.7rem);
+  color:var(--gold);opacity:.75;letter-spacing:.06em;margin-top:3px;
+  text-align:center;font-style:normal;
 }
 #q-tr{
-  font-family:'IM Fell English',serif;font-style:italic;
-  font-size:clamp(.56rem,2.2vw,.74rem);
-  color:var(--text);opacity:.8;letter-spacing:.03em;line-height:1.5;
+  font-size:clamp(.6rem,2.4vw,.8rem);
+  color:var(--text);opacity:.9;letter-spacing:.02em;line-height:1.6;
+  text-align:center;margin-top:2px;
 }
 /* fade in/out on quote change */
 .q-fade-in{animation:qIn .6s ease forwards}
@@ -447,6 +448,9 @@ function applyL(){
   ['setup-card','begin-btn'].forEach(id=>{
     const el=document.getElementById(id);if(el)el.style.fontFamily=ff;
   });
+  // Apply native font to quote source and translation lines
+  document.getElementById('q-src').style.fontFamily = ff;
+  document.getElementById('q-tr').style.fontFamily = ff;
 }
 
 function showS(id){
@@ -518,27 +522,71 @@ function runClock({bdo,ea,bpm,bas,st}){
 
   let quoteOrder = Array.from({length:QUOTES.length},(_,i)=>i); // sequential
 
+  // ── SOURCE NAME TRANSLATIONS ──
+  // Maps common source keywords (in Hindi) to each language
+  const SRC_MAP = {
+    'भगवद् गीता':    {te:'భగవద్ గీత',    ta:'பகவத் கீதை',   kn:'ಭಗವದ್ ಗೀತೆ',   ml:'ഭഗവദ്ഗീത',       bn:'ভগবদ্ গীতা',   gu:'ભગવદ્ ગીતા',  pa:'ਭਗਵਦ ਗੀਤਾ',   or:'ଭଗବଦ ଗୀତା',   mr:'भगवद् गीता',  sa:'भगवद्गीता',   en:'Bhagavad Gita'},
+    'महाभारत':       {te:'మహాభారతం',      ta:'மகாபாரதம்',    kn:'ಮಹಾಭಾರತ',       ml:'മഹാഭാരതം',       bn:'মহাভারত',       gu:'મહાભારત',     pa:'ਮਹਾਭਾਰਤ',      or:'ମହାଭାରତ',      mr:'महाभारत',     sa:'महाभारतम्',   en:'Mahabharata'},
+    'वाल्मीकि रामायण':{te:'వాల్మీకి రామాయణం',ta:'வால்மீகி இராமாயணம்',kn:'ವಾಲ್ಮೀಕಿ ರಾಮಾಯಣ',ml:'വാൽമീകി രാമായണം',bn:'বাল্মীকি রামায়ণ', gu:'વાલ્મીકિ રામાયણ',pa:'ਵਾਲਮੀਕਿ ਰਾਮਾਇਣ',or:'ବାଲ୍ମୀକି ରାମାୟଣ', mr:'वाल्मीकि रामायण',sa:'वाल्मीकिरामायणम्',en:'Valmiki Ramayana'},
+    'उपनिषद':        {te:'ఉపనిషత్తు',      ta:'உபநிஷத்',      kn:'ಉಪನಿಷತ್ತು',     ml:'ഉപനിഷദ്',        bn:'উপনিষদ',        gu:'ઉપનિષદ',      pa:'ਉਪਨਿਸ਼ਦ',       or:'ଉପନିଷଦ',       mr:'उपनिषद',      sa:'उपनिषद्',     en:'Upanishad'},
+    'चाणक्य':        {te:'చాణక్య',         ta:'சாணக்கியம்',   kn:'ಚಾಣಕ್ಯ',        ml:'ചാണക്യം',        bn:'চাণক্য',        gu:'ચાણક્ય',      pa:'ਚਾਣਕਯ',        or:'ଚାଣକ୍ୟ',       mr:'चाणक्य',      sa:'चाणक्यः',     en:'Chanakya'},
+    'अर्थशास्त्र':   {te:'అర్థశాస్త్రం',  ta:'அர்த்தசாஸ்திரம்',kn:'ಅರ್ಥಶಾಸ್ತ್ರ',  ml:'അർത്ഥശാസ്ത്രം',  bn:'অর্থশাস্ত্র',   gu:'અર્થશાસ્ત્ર', pa:'ਅਰਥਸ਼ਾਸਤਰ',    or:'ଅର୍ଥଶାସ୍ତ୍ର',  mr:'अर्थशास्त्र', sa:'अर्थशास्त्रम्',en:'Arthashastra'},
+    'योगसूत्र':      {te:'యోగసూత్రాలు',   ta:'யோக சூத்திரம்',kn:'ಯೋಗಸೂತ್ರ',      ml:'യോഗസൂത്രം',      bn:'যোগসূত্র',      gu:'યોગસૂત્ર',    pa:'ਯੋਗਸੂਤਰ',      or:'ଯୋଗସୂତ୍ର',     mr:'योगसूत्र',    sa:'योगसूत्रम्',  en:'Yoga Sutras'},
+    'हितोपदेश':      {te:'హితోపదేశం',     ta:'ஹிதோபதேசம்',   kn:'ಹಿತೋಪದೇಶ',      ml:'ഹിതോപദേശം',      bn:'হিতোপদেশ',      gu:'હિતોપદેશ',    pa:'ਹਿਤੋਪਦੇਸ਼',    or:'ହିତୋପଦେଶ',     mr:'हितोपदेश',    sa:'हितोपदेशः',   en:'Hitopadesha'},
+    'भागवत':         {te:'భాగవతం',        ta:'பாகவதம்',      kn:'ಭಾಗವತ',         ml:'ഭാഗവതം',         bn:'ভাগবত',         gu:'ભાગવત',       pa:'ਭਾਗਵਤ',        or:'ଭାଗବତ',        mr:'भागवत',       sa:'भागवतम्',     en:'Bhagavata Purana'},
+    'गायत्री':       {te:'గాయత్రీ మంత్రం',ta:'காயத்ரி மந்திரம்',kn:'ಗಾಯತ್ರಿ ಮಂತ್ರ',ml:'ഗായത്രി മന്ത്രം', bn:'গায়ত্রী মন্ত্র', gu:'ગાયત્રી મંત્ર',pa:'ਗਾਇਤ੍ਰੀ ਮੰਤਰ',  or:'ଗାୟତ୍ରୀ ମନ୍ତ୍ର', mr:'गायत्री मंत्र',sa:'गायत्रीमन्त्रः',en:'Gayatri Mantra'},
+    'ऋग्वेद':        {te:'ఋగ్వేదం',        ta:'ரிக் வேதம்',   kn:'ಋಗ್ವೇದ',        ml:'ഋഗ്വേദം',         bn:'ঋগ্বেদ',         gu:'ઋગ્વેદ',      pa:'ਰਿਗਵੇਦ',       or:'ଋଗ୍ବେଦ',       mr:'ऋग्वेद',      sa:'ऋग्वेदः',     en:'Rigveda'},
+    'अथर्ववेद':      {te:'అథర్వవేదం',     ta:'அதர்வ வேதம்',  kn:'ಅಥರ್ವವೇದ',      ml:'അഥർവ്വവേദം',      bn:'অথর্ববেদ',       gu:'અથર્વવેદ',    pa:'ਅਥਰਵਵੇਦ',      or:'ଅଥର୍ବବେଦ',     mr:'अथर्ववेद',    sa:'अथर्ववेदः',   en:'Atharvaveda'},
+    'देवी':          {te:'దేవీ మహాత్మ్యం', ta:'தேவி மஹாத்மியம்',kn:'ದೇವಿ ಮಹಾತ್ಮ್ಯ',ml:'ദേവി മഹാത്മ്യം',  bn:'দেবী মাহাত্ম্য',  gu:'દેવી મહાત્મ્ય',pa:'ਦੇਵੀ ਮਾਹਾਤਮਯ', or:'ଦେବୀ ମାହାତ୍ମ୍ୟ',mr:'देवी महात्म्य', sa:'देवीमाहात्म्यम्',en:'Devi Mahatmyam'},
+    'शिव':           {te:'శివ స్తుతి',      ta:'சிவ ஸ்தோத்திரம்',kn:'ಶಿವ ಸ್ತೋತ್ರ',  ml:'ശിവ സ്തോത്രം',   bn:'শিব স্তোত্র',    gu:'શિવ સ્તોત્ર',  pa:'ਸ਼ਿਵ ਸਤੋਤਰ',   or:'ଶିବ ସ୍ତୋତ୍ର',   mr:'शिव स्तोत्र',  sa:'शिवस्तोत्रम्', en:'Shiva Stotram'},
+    'भर्तृहरि':      {te:'భర్తృహరి',       ta:'பர்திருஹரி',   kn:'ಭರ್ತೃಹರಿ',      ml:'ഭർതൃഹരി',        bn:'ভর্তৃহরি',       gu:'ભર્તૃહરિ',    pa:'ਭਰਤ੍ਰਿਹਰਿ',    or:'ଭର୍ତୃହରି',     mr:'भर्तृहरि',    sa:'भर्तृहरिः',   en:'Bhartrhari'},
+    'रामचरितमानस':   {te:'రామచరితమానస',    ta:'ராமசரிதமானஸ்', kn:'ರಾಮಚರಿತಮಾನಸ',   ml:'രാമചരിതമാനസ',    bn:'রামচরিতমানস',    gu:'રામચરિતમાનસ', pa:'ਰਾਮਚਰਿਤਮਾਨਸ',  or:'ରାମଚରିତମାନସ',  mr:'रामचरितमानस', sa:'रामचरितमानसम्',en:'Ramcharitmanas'},
+    'योगवासिष्ठ':    {te:'యోగవాసిష్ఠ',    ta:'யோக வாசிஷ்ட',  kn:'ಯೋಗವಾಸಿಷ್ಠ',    ml:'യോഗവാസിഷ്ഠ',     bn:'যোগবাসিষ্ঠ',     gu:'યોગવાસિષ્ઠ',  pa:'ਯੋਗ ਵਾਸਿਸ਼ਠ',  or:'ଯୋଗବାସିଷ୍ଠ',  mr:'योगवासिष्ठ',  sa:'योगवासिष्ठः',  en:'Yoga Vasistha'},
+    'विवेकचूडामणि':  {te:'వివేకచూడామణి',   ta:'விவேகசூடாமணி',  kn:'ವಿವೇಕಚೂಡಾಮಣಿ',  ml:'വിവേകചൂഡാമണി',  bn:'বিবেকচূড়ামণি',   gu:'વિવેકચૂડામણિ', pa:'ਵਿਵੇਕਚੂੜਾਮਣਿ', or:'ବିବେକଚୂଡ଼ାମଣି',mr:'विवेकचूडामणि', sa:'विवेकचूडामणिः', en:'Vivekachudamani'},
+    'नारद':          {te:'నారద భక్తి సూత్రం',ta:'நாரத பக்தி சூத்திரம்',kn:'ನಾರದ ಭಕ್ತಿ ಸೂತ್ರ',ml:'നാരദ ഭക്തി സൂത്രം',bn:'নারদ ভক্তি সূত্র',gu:'નારદ ભક્તિ સૂત્ર',pa:'ਨਾਰਦ ਭਗਤੀ ਸੂਤਰ',or:'ନାରଦ ଭକ୍ତି ସୂତ୍ର',mr:'नारद भक्ति सूत्र',sa:'नारदभक्तिसूत्रम्',en:'Narada Bhakti Sutras'},
+    'विष्णु':        {te:'విష్ణు సహస్రనామం',ta:'விஷ்ணு சஹஸ்ரநாமம்',kn:'ವಿಷ್ಣು ಸಹಸ್ರನಾಮ',ml:'വിഷ്ണുസഹസ്രനാമം',bn:'বিষ্ণু সহস্রনাম',  gu:'વિષ્ણુ સહસ્રનામ',pa:'ਵਿਸ਼ਨੂ ਸਹਸ੍ਰਨਾਮ',or:'ବିଷ୍ଣୁ ସହସ୍ରନାମ', mr:'विष्णु सहस्रनाम',sa:'विष्णुसहस्रनामम्',en:'Vishnu Sahasranama'},
+    'मनुस्मृति':     {te:'మనుస్మృతి',       ta:'மனுஸ்மிருதி',  kn:'ಮನುಸ್ಮೃತಿ',     ml:'മനുസ്മൃതി',       bn:'মনুস্মৃতি',       gu:'મનુસ્મૃતિ',    pa:'ਮਨੂਸਿਮ੍ਰਿਤੀ',  or:'ମନୁସ୍ମୃତି',    mr:'मनुस्मृति',   sa:'मनुस्मृतिः',  en:'Manusmriti'},
+    'पञ्चतन्त्र':    {te:'పంచతంత్రం',      ta:'பஞ்சதந்திரம்', kn:'ಪಂಚತಂತ್ರ',       ml:'പഞ്ചതന്ത്രം',     bn:'পঞ্চতন্ত্র',      gu:'પંચતંત્ર',     pa:'ਪੰਚਤੰਤਰ',       or:'ପଞ୍ଚତନ୍ତ୍ର',   mr:'पंचतंत्र',    sa:'पञ्चतन्त्रम्', en:'Panchatantra'},
+    'तिरुक्कुरल':    {te:'తిరుక్కుఱళ్',    ta:'திருக்குறள்',   kn:'ತಿರುಕ್ಕುರಳ್',   ml:'തിരുക്കുറൾ',      bn:'তিরুক্কুরল',      gu:'તિરુક્કુરળ',   pa:'ਤਿਰੁੱਕੁਰਲ',    or:'ତିରୁକ୍କୁଡ଼ଳ',  mr:'तिरुक्कुरल',  sa:'तिरुक्कुरलम्', en:'Tirukkural'},
+    'महोपनिषद':      {te:'మహోపనిషత్తు',    ta:'மஹோபநிஷத்',    kn:'ಮಹೋಪನಿಷತ್ತು',   ml:'മഹോപനിഷദ്',      bn:'মহোপনিষদ',        gu:'મહોપનિષદ',     pa:'ਮਹਾਉਪਨਿਸ਼ਦ',    or:'ମହୋପନିଷଦ',     mr:'महोपनिषद',    sa:'महोपनिषद्',   en:'Mahopanishad'},
+    'भज गोविन्दम':  {te:'భజ గోవిందం',     ta:'பஜ கோவிந்தம்', kn:'ಭಜ ಗೋವಿಂದಮ್',   ml:'ഭജ ഗോവിന്ദം',    bn:'ভজ গোবিন্দম্',    gu:'ભજ ગોવિન્દ',   pa:'ਭਜ ਗੋਵਿੰਦ',    or:'ଭଜ ଗୋବିନ୍ଦ',   mr:'भज गोविंदम',  sa:'भजगोविन्दम्',  en:'Bhaja Govindam'},
+    'वैदिक':         {te:'వేద ప్రార్థన',    ta:'வேத ஸ்தோத்திரம்',kn:'ವೈದಿಕ ಪ್ರಾರ್ಥನೆ',ml:'വൈദിക പ്രാർഥന',  bn:'বৈদিক প্রার্থনা',  gu:'વૈદિક પ્રાર્થના',pa:'ਵੈਦਿਕ ਪ੍ਰਾਰਥਨਾ',or:'ବୈଦିକ ପ୍ରାର୍ଥନା', mr:'वैदिक प्रार्थना',sa:'वैदिकप्रार्थना',en:'Vedic Prayer'},
+  };
+
+  function translateSrc(src, lang){
+    if(lang==='hi'||lang==='mr'||lang==='sa') return src;
+    // Find matching key in SRC_MAP
+    for(const [key, map] of Object.entries(SRC_MAP)){
+      if(src.includes(key)){
+        const langName = map[lang] || src;
+        // Preserve chapter/verse numbers from original (e.g. "२.२३")
+        const nums = src.replace(key,'').trim();
+        return langName + (nums ? ' — ' + nums : '');
+      }
+    }
+    return src; // unchanged if no match
+  }
+
   function showQ(){
     const q=QUOTES[quoteOrder[qIdx % quoteOrder.length]];
     const wrap=document.getElementById('quote-wrap');
     wrap.classList.remove('q-fade-in');
     wrap.classList.add('q-fade-out');
     setTimeout(async ()=>{
+      // Line 1: Sanskrit shloka (always original script)
       document.getElementById('q-skt').textContent=q.s;
-      document.getElementById('q-src').textContent=q.src;
-      // Show Hindi immediately while native translation loads
-      const immediate = (CL === 'en') ? q.e : q.h;
+      // Line 2: Source in user's selected language
+      document.getElementById('q-src').textContent=translateSrc(q.src, CL);
+      // Line 3: Explanation in user's selected language (show immediately)
+      const immediate = (CL==='en') ? q.e : q.h;
       document.getElementById('q-tr').textContent=immediate;
       wrap.classList.remove('q-fade-out');
       wrap.classList.add('q-fade-in');
-      // Fetch native translation async (already cached after first view)
+      // Resolve final translation
       const native = await getTranslation(q, CL);
       document.getElementById('q-tr').textContent=native;
       qIdx++;
-      // After full cycle, start over sequentially
-      if(qIdx > 0 && qIdx % quoteOrder.length === 0){
-        qIdx = 0;
-      }
+      if(qIdx > 0 && qIdx % quoteOrder.length === 0) qIdx=0;
     },420);
   }
   showQ();
