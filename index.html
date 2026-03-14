@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no,viewport-fit=cover"/>
+<meta name="theme-color" content="#04010a"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="Ayush"/>
+<meta name="application-name" content="Ayush"/>
+<meta name="description" content="Sacred lifespan clock — your heartbeats remaining"/>
+<link rel="manifest" href="#" id="pwa-manifest"/>
+<title>आयुष — Ayush</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Tiro+Devanagari+Sanskrit:ital@0;1&family=Noto+Serif+Devanagari:wght@400;700&family=Noto+Sans+Devanagari:wght@400;600&family=Noto+Sans+Tamil:wght@400;600&family=Noto+Sans+Telugu:wght@400;600&family=Noto+Sans+Kannada:wght@400;600&family=Noto+Sans+Malayalam:wght@400;600&family=Noto+Sans+Bengali:wght@400;600&family=Noto+Sans+Gujarati:wght@400;600&family=Noto+Sans+Gurmukhi:wght@400;600&family=Noto+Sans+Oriya:wght@400;600&family=Cinzel+Decorative:wght@700;900&family=IM+Fell+English:ital@0;1&display=swap" rel="stylesheet" media="print" onload="this.media='all'"/>
+<noscript><link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;600&family=Noto+Sans+Telugu:wght@400;600&display=swap" rel="stylesheet"/></noscript>
+<style>
+/* ── RESET & VARS ── */
+:root{
+  --bg:#04010a;
+  --gold:#c8942a;
+  --gold-hi:#f0c04a;
+  --gold-dim:#5a3e10;
+  --text:#e8dcc4;
+  --text-dim:#4a3a22;
+  --red:#cc2200;
+  --red-hi:#ff3c1a;
+  --ac:#c8942a;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{width:100%;height:100%;background:var(--bg);color:var(--text);
+  overflow:hidden;user-select:none;font-family:'Noto Serif Devanagari',serif}
+
+/* ── STARS ── */
+#stars-c{position:fixed;inset:0;z-index:0;pointer-events:none}
+
+/* ── HEARTBEAT VIGNETTE ── */
+#hb-vignette{display:none}
+
+/* ── SCREENS ── */
+.screen{position:fixed;inset:0;z-index:10;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:18px;transition:opacity .4s,transform .4s}
+.screen.hidden{opacity:0;pointer-events:none;transform:scale(.97)}
+
+/* ═══════════ LANG SCREEN ═══════════ */
+#lang-screen{
+  background:radial-gradient(ellipse at 50% 20%,rgba(200,148,42,.08),transparent 65%);
+}
+.lang-om{
+  font-family:'Tiro Devanagari Sanskrit',serif;
+  font-size:clamp(3.5rem,14vw,6rem);line-height:1;text-align:center;
+  color:var(--gold);
+  filter:drop-shadow(0 0 28px rgba(200,148,42,.6));
+  animation:omBreathe 4s ease-in-out infinite;
+}
+@keyframes omBreathe{
+  0%,100%{filter:drop-shadow(0 0 18px rgba(200,148,42,.4))}
+  50%{filter:drop-shadow(0 0 50px rgba(240,192,74,.95))}
+}
+.lang-hint{
+  font-family:'IM Fell English',serif;font-style:italic;
+  font-size:clamp(.65rem,2.3vw,.85rem);color:var(--gold-dim);
+  letter-spacing:.24em;margin:6px 0 22px;text-align:center;
+}
+.lang-grid{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:7px;
+  width:100%;max-width:480px;max-height:56vh;overflow-y:auto;padding-right:2px;
+}
+.lang-grid::-webkit-scrollbar{width:3px}
+.lang-grid::-webkit-scrollbar-thumb{background:rgba(200,148,42,.3);border-radius:4px}
+.lang-btn{
+  background:rgba(255,255,255,.025);border:1px solid rgba(200,148,42,.14);
+  border-radius:12px;padding:11px 6px;cursor:pointer;transition:all .18s;
+  display:flex;flex-direction:column;align-items:center;gap:3px;
+}
+.lang-btn:hover,.lang-btn.sel{
+  background:rgba(200,148,42,.12);border-color:var(--gold);
+  box-shadow:0 0 14px rgba(200,148,42,.18);
+}
+.ln{font-size:clamp(.95rem,3.8vw,1.18rem);color:var(--text);line-height:1.2;text-align:center}
+.le{font-size:.54rem;letter-spacing:.1em;color:var(--text-dim);
+  font-family:'Cinzel Decorative',serif;text-transform:uppercase}
+
+/* ═══════════ SETUP SCREEN ═══════════ */
+#setup{
+  background:radial-gradient(ellipse at 50% 25%,rgba(200,148,42,.06),transparent 70%);
+}
+.s-om{
+  font-family:'Tiro Devanagari Sanskrit',serif;
+  font-size:clamp(3rem,10vw,5rem);line-height:1;text-align:center;
+  color:var(--gold);filter:drop-shadow(0 0 24px rgba(200,148,42,.5));
+  animation:omBreathe 4s ease-in-out infinite;margin-bottom:4px;
+}
+.s-sub{font-family:'IM Fell English',serif;font-style:italic;
+  font-size:clamp(.65rem,2.4vw,.82rem);color:var(--gold-dim);
+  letter-spacing:.2em;margin-bottom:18px;text-align:center;}
+.card{
+  background:rgba(255,255,255,.02);border:1px solid rgba(200,148,42,.14);
+  border-radius:18px;padding:22px 20px 18px;width:100%;max-width:420px;
+  backdrop-filter:blur(16px);
+  box-shadow:0 8px 40px rgba(0,0,0,.6),inset 0 1px 0 rgba(200,148,42,.07);
+}
+.fg{margin-bottom:14px}
+.fl{display:flex;gap:10px}.fl .fg{flex:1}
+.lbl{display:block;margin-bottom:5px}
+.ld{display:block;font-size:clamp(.76rem,3vw,.96rem);color:var(--gold);line-height:1.3}
+.ls{display:block;font-size:.54rem;letter-spacing:.14em;color:var(--gold-dim);
+  text-transform:uppercase;margin-top:1px}
+.fi{
+  width:100%;background:rgba(0,0,0,.5);
+  border:1px solid rgba(200,148,42,.18);border-radius:10px;
+  padding:11px 13px;color:var(--text);font-size:.9rem;
+  outline:none;transition:border-color .22s,box-shadow .22s;-webkit-appearance:none;
+}
+.fi:focus{border-color:rgba(200,148,42,.6);box-shadow:0 0 0 3px rgba(200,148,42,.1)}
+.fi::placeholder{color:var(--text-dim)}
+input[type="date"]{color-scheme:dark}
+input[type="date"]::-webkit-calendar-picker-indicator{
+  filter:invert(.5) sepia(1) saturate(3) hue-rotate(5deg);cursor:pointer}
+.pre-row{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px}
+.pre-btn{
+  background:rgba(200,148,42,.07);border:1px solid rgba(200,148,42,.18);
+  border-radius:20px;padding:4px 11px;font-size:.64rem;color:var(--gold);
+  cursor:pointer;transition:all .18s;
+}
+.pre-btn:hover,.pre-btn.on{background:rgba(200,148,42,.2);border-color:var(--gold)}
+.bpm-note{font-family:'IM Fell English',serif;font-style:italic;
+  font-size:.64rem;color:var(--text-dim);margin-top:3px}
+.err{font-family:'IM Fell English',serif;font-style:italic;
+  font-size:.7rem;color:var(--red-hi);min-height:13px;margin-top:4px}
+.begin-btn{
+  width:100%;padding:14px;margin-top:5px;
+  background:linear-gradient(135deg,#5a3a06,#c8942a,#5a3a06);
+  border:none;border-radius:12px;
+  font-size:clamp(.82rem,3.4vw,.98rem);font-weight:700;
+  letter-spacing:.08em;color:#04010a;cursor:pointer;
+  transition:all .3s;box-shadow:0 4px 22px rgba(200,148,42,.28);
+  position:relative;overflow:hidden;
+}
+.begin-btn::after{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(135deg,transparent,rgba(255,255,255,.18),transparent);
+  transform:translateX(-100%);transition:transform .4s;
+}
+.begin-btn:hover{transform:translateY(-1px);box-shadow:0 6px 32px rgba(200,148,42,.48)}
+.begin-btn:hover::after{transform:translateX(100%)}
+.chg-lang{
+  background:transparent;border:none;color:var(--gold-dim);
+  font-size:.58rem;letter-spacing:.14em;cursor:pointer;margin-top:10px;
+  text-decoration:underline;text-underline-offset:3px;text-transform:uppercase;
+}
+.chg-lang:hover{color:var(--gold)}
+
+/* ═══════════ CLOCK SCREEN ═══════════ */
+#clock{padding:0;justify-content:space-between}
+
+/* Top bar */
+
+
+
+
+/* ── CENTRE ── */
+#centre{
+  flex:1;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  position:relative;width:100%;padding:0 14px;
+  gap:0;
+}
+
+/* ── MAIN LABEL ── */
+.ctr-lbl{
+  font-size:clamp(.6rem,2.2vw,.78rem);letter-spacing:.25em;
+  color:var(--text);text-transform:uppercase;
+  margin-bottom:8px;text-align:center;
+  font-family:'Noto Sans Devanagari',sans-serif;
+}
+
+/* ── THE NUMBER ── */
+#num-wrap{
+  display:flex;align-items:baseline;justify-content:center;
+  flex-wrap:nowrap;gap:0;width:100%;
+  line-height:1;
+}
+/* stable digits (white-gold) */
+.nd{
+  font-family:'Noto Serif Devanagari',serif;
+  font-size:clamp(2.4rem,10.5vw,5.4rem);
+  font-weight:700;
+  color:#e8dcc4;
+  letter-spacing:-.01em;
+  line-height:1;
+  display:inline-block;
+  transition:none;
+}
+/* separator commas */
+.nc{
+  font-family:'Noto Serif Devanagari',serif;
+  font-size:clamp(1.6rem,7vw,3.6rem);
+  font-weight:400;
+  color:var(--gold-dim);
+  line-height:1;
+  display:inline-block;
+  padding:0 1px;
+}
+
+
+/* ── UNIT ── */
+.ctr-unit{
+  font-size:clamp(.6rem,2.2vw,.78rem);letter-spacing:.18em;
+  color:var(--text);text-transform:uppercase;
+  margin-top:6px;text-align:center;line-height:1.7;
+  font-family:'Noto Sans Devanagari',sans-serif;
+}
+
+/* ── PROGRESS ── */
+#prog-wrap{width:min(88vw,360px);margin-top:16px}
+.prog-row{display:flex;justify-content:space-between;
+  font-size:.7rem;letter-spacing:.1em;color:var(--text);margin-bottom:5px;
+  font-family:'Noto Sans Devanagari',sans-serif}
+#prog-track{height:3px;background:rgba(255,255,255,.07);border-radius:4px;overflow:hidden}
+#prog-fill{
+  height:100%;border-radius:4px;
+  transition:width .9s linear,background .8s;
+}
+
+/* ── QUOTE ── */
+#quote-wrap{
+  text-align:center;padding:0 10px;margin-top:12px;
+  min-height:58px;
+  display:flex;flex-direction:column;align-items:center;gap:3px;
+}
+#q-skt{
+  font-family:'Tiro Devanagari Sanskrit',serif;
+  font-size:clamp(.8rem,3.6vw,1.08rem);
+  color:var(--gold);line-height:1.5;
+  filter:drop-shadow(0 0 8px rgba(200,148,42,.4));
+}
+#q-src{
+  font-family:'IM Fell English',serif;font-style:italic;
+  font-size:clamp(.52rem,2vw,.68rem);
+  color:var(--gold);opacity:.8;letter-spacing:.08em;margin-top:2px;
+}
+#q-tr{
+  font-family:'IM Fell English',serif;font-style:italic;
+  font-size:clamp(.56rem,2.2vw,.74rem);
+  color:var(--text);opacity:.8;letter-spacing:.03em;line-height:1.5;
+}
+/* fade in/out on quote change */
+.q-fade-in{animation:qIn .6s ease forwards}
+.q-fade-out{animation:qOut .4s ease forwards}
+@keyframes qIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+@keyframes qOut{from{opacity:1}to{opacity:0}}
+
+
+
+::-webkit-scrollbar{width:0}
+</style>
+</head>
+<body>
+<canvas id="stars-c"></canvas>
+<div id="hb-vignette"></div>
+
+<!-- ══ LANGUAGE SCREEN ══ -->
+<div class="screen" id="lang-screen">
+  <div class="lang-om">ॐ</div>
+  <div class="lang-hint">भाषा चुनें · SELECT YOUR LANGUAGE</div>
+  <div class="lang-grid" id="lang-grid"></div>
+</div>
+
+<!-- ══ SETUP SCREEN ══ -->
+<div class="screen hidden" id="setup">
+  <div class="s-om">आयुष</div>
+  <div class="s-sub" id="s-sub">Sacred Lifespan Clock</div>
+  <div class="card" id="setup-card">
+    <div class="fg">
+      <label class="lbl">
+        <span class="ld" id="l-dob-d">जन्म तिथि</span>
+        <span class="ls" id="l-dob-s">Date of Birth</span>
+      </label>
+      <input class="fi" type="date" id="birthdate"/>
+    </div>
+    <div class="fl">
+      <div class="fg">
+        <label class="lbl">
+          <span class="ld" id="l-age-d">अपेक्षित आयु (वर्ष)</span>
+          <span class="ls" id="l-age-s">Expected Lifespan</span>
+        </label>
+        <input class="fi" type="number" id="exp-age" placeholder="75" min="1" max="150"/>
+        <div class="pre-row">
+          <button class="pre-btn" data-a="60">60</button>
+          <button class="pre-btn" data-a="75">75</button>
+          <button class="pre-btn on" data-a="100" id="purna-btn">पूर्ण १००</button>
+          <button class="pre-btn" data-a="120">120</button>
+        </div>
+      </div>
+      <div class="fg">
+        <label class="lbl">
+          <span class="ld" id="l-bpm-d">हृदयगति</span>
+          <span class="ls" id="l-bpm-s">BPM (optional)</span>
+        </label>
+        <input class="fi" type="number" id="cust-bpm" placeholder="auto" min="40" max="200"/>
+        <div class="bpm-note" id="bpm-note">Leave blank — age-accurate</div>
+      </div>
+    </div>
+    <div class="err" id="err-msg"></div>
+    <button class="begin-btn" id="begin-btn">▶ BEGIN YOUR AYUSH</button>
+  </div>
+  <button class="chg-lang" id="chg-lang-btn">🌐 Change Language</button>
+</div>
+
+<!-- ══ CLOCK SCREEN ══ -->
+<div class="screen hidden" id="clock">
+
+
+
+
+
+  <!-- Main Counter -->
+  <div id="centre">
+    <div class="ctr-lbl" id="ctr-lbl">शेष हृदयस्पंदन</div>
+
+    <!-- THE NUMBER — built dynamically -->
+    <div id="num-wrap"></div>
+
+    <div class="ctr-unit" id="ctr-unit">प्राण · शेष धड़कनें</div>
+
+    <!-- Progress bar -->
+    <div id="prog-wrap">
+      <div class="prog-row">
+        <span id="p-birth">जन्म</span>
+        <span id="p-pct">0%</span>
+        <span id="p-moksha">मोक्ष</span>
+      </div>
+      <div id="prog-track"><div id="prog-fill" style="width:0%"></div></div>
+    </div>
+
+    <!-- Quote -->
+    <div id="quote-wrap">
+      <div id="q-skt">ॐ</div>
+      <div id="q-src">—</div>
+      <div id="q-tr">—</div>
+    </div>
+  </div>
+
+
+</div>
+
+<script>
+// ════════════════════════════════════════════
+// QUOTES — Bhagavad Gita + Mahabharata + Upanishads
+// ════════════════════════════════════════════
+const QUOTES=[{"s":"कुतस्त्वा कश्मलमिदं विषमे समुपस्थितम्","src":"भगवद् गीता १.२८","h":"यह कायरता और दुःख तुझ पर इस विषम समय में कहाँ से आ गया?","e":"Whence has this depression come upon you at this critical moment?"},{"s":"न त्वेवाहं जातु नासं न त्वं नेमे जनाधिपाः","src":"भगवद् गीता २.१२","h":"न तो मैं कभी नहीं था, न तू, न ये राजा — और न आगे भी नहीं रहेंगे।","e":"Never was there a time when I did not exist, nor you, nor all these beings."},{"s":"नैनं छिन्दन्ति शस्त्राणि नैनं दहति पावकः","src":"भगवद् गीता २.२३","h":"इस आत्मा को शस्त्र काट नहीं सकते, अग्नि जला नहीं सकती।","e":"The soul cannot be cut by weapons, nor burned by fire."},{"s":"वासांसि जीर्णानि यथा विहाय","src":"भगवद् गीता २.२२","h":"जैसे पुराने वस्त्र त्याग कर नए पहनते हैं, वैसे आत्मा नया शरीर धारण करती है।","e":"As a person puts on new garments, the soul similarly accepts new material bodies."},{"s":"नायमात्मा बलहीनेन लभ्यः","src":"भगवद् गीता २.२५","h":"यह आत्मा अव्यक्त, अचिन्त्य और अविकारी है।","e":"This soul is unmanifest, incomprehensible and immutable."},{"s":"जातस्य हि ध्रुवो मृत्युर्ध्रुवं जन्म मृतस्य च","src":"भगवद् गीता २.२७","h":"जो जन्मा है उसकी मृत्यु निश्चित है, और मृत का पुनर्जन्म।","e":"Death is certain for the born, and rebirth is certain for the dead."},{"s":"कर्मण्येवाधिकारस्ते मा फलेषु कदाचन","src":"भगवद् गीता २.४७","h":"कर्म करना तेरा अधिकार है, फल की कामना मत कर।","e":"You have the right to perform action, never to the fruits thereof."},{"s":"योगः कर्मसु कौशलम्","src":"भगवद् गीता २.५०","h":"कर्म में कुशलता ही योग है।","e":"Yoga is skill in action."},{"s":"दुःखेष्वनुद्विग्नमनाः सुखेषु विगतस्पृहः","src":"भगवद् गीता २.५६","h":"दुःख में जिसका मन उद्विग्न नहीं और सुख में जो स्पृहारहित है — वह स्थिरप्रज्ञ है।","e":"One who is not disturbed in mind even in misery, and not elated in happiness, is the steady-minded sage."},{"s":"प्रजहाति यदा कामान् सर्वान् पार्थ मनोगतान्","src":"भगवद् गीता २.५५","h":"जब मनुष्य मन की समस्त कामनाओं को त्याग देता है, तब वह स्थितप्रज्ञ कहलाता है।","e":"When one discards all desires of the mind, one is said to be of steady wisdom."},{"s":"ध्यायतो विषयान् पुंसः सङ्गस्तेषूपजायते","src":"भगवद् गीता २.६२","h":"विषयों का चिंतन करने से आसक्ति, आसक्ति से कामना और कामना से क्रोध उत्पन्न होता है।","e":"Contemplating sense objects, attachment arises; from attachment, desire; from desire, anger."},{"s":"क्रोधाद्भवति सम्मोहः सम्मोहात्स्मृतिविभ्रमः","src":"भगवद् गीता २.६३","h":"क्रोध से मोह, मोह से स्मृतिभ्रंश, स्मृतिभ्रंश से बुद्धि का नाश होता है।","e":"From anger comes delusion; from delusion, loss of memory; from loss of memory, destruction of intelligence."},{"s":"नियतं कुरु कर्म त्वं कर्म ज्यायो ह्यकर्मणः","src":"भगवद् गीता ३.८","h":"अपना नियत कर्म करो, क्योंकि कर्म न करने से कर्म करना श्रेष्ठ है।","e":"Perform your prescribed duties, for action is better than inaction."},{"s":"यज्ञार्थात्कर्मणोऽन्यत्र लोकोऽयं कर्मबन्धनः","src":"भगवद् गीता ३.९","h":"यज्ञ के अतिरिक्त अन्य कर्मों में लगा यह संसार बंधन में है।","e":"This world is in bondage except for actions done as sacrifice."},{"s":"श्रेयान्स्वधर्मो विगुणः परधर्मात्स्वनुष्ठितात्","src":"भगवद् गीता ३.३५","h":"अपना अधूरा धर्म भी पर के पूरे धर्म से श्रेष्ठ है।","e":"One's own duty, though imperfect, is better than another's duty well performed."},{"s":"काम एष क्रोध एष रजोगुणसमुद्भवः","src":"भगवद् गीता ३.३७","h":"काम और क्रोध — ये रजोगुण से उत्पन्न होते हैं — यही महापाप और महाशत्रु हैं।","e":"Lust and wrath, born of the mode of passion — these are the great enemies."},{"s":"यदा यदा हि धर्मस्य ग्लानिर्भवति भारत","src":"भगवद् गीता ४.७","h":"जब-जब धर्म की हानि होती है, तब-तब मैं अवतार लेता हूँ।","e":"Whenever dharma declines, I manifest myself."},{"s":"परित्राणाय साधूनां विनाशाय च दुष्कृताम्","src":"भगवद् गीता ४.८","h":"साधुओं की रक्षा, दुष्टों के विनाश और धर्म की स्थापना के लिए मैं युग-युग में आता हूँ।","e":"To protect the righteous, destroy the wicked and re-establish dharma, I come in every age."},{"s":"ज्ञानं लब्ध्वा परां शान्तिमचिरेणाधिगच्छति","src":"भगवद् गीता ४.३९","h":"ज्ञान प्राप्त करके मनुष्य शीघ्र ही परम शांति को पाता है।","e":"Having attained knowledge, one quickly attains supreme peace."},{"s":"न हि ज्ञानेन सदृशं पवित्रमिह विद्यते","src":"भगवद् गीता ४.३८","h":"इस संसार में ज्ञान के समान पवित्र और कुछ नहीं है।","e":"There is nothing in this world as purifying as knowledge."},{"s":"श्रद्धावाँल्लभते ज्ञानं तत्परः संयतेन्द्रियः","src":"भगवद् गीता ४.३९","h":"जो श्रद्धावान है, तत्पर है और इन्द्रियों को वश में रखता है — वह ज्ञान पाता है।","e":"The faithful, the devoted, the master of senses — attains knowledge."},{"s":"सन्न्यासस्तु महाबाहो दुःखमाप्तुमयोगतः","src":"भगवद् गीता ५.६","h":"योग के बिना संन्यास कठिन है; योगी ब्रह्म को शीघ्र प्राप्त होता है।","e":"Without yoga, renunciation is hard to attain; but the yogi quickly reaches Brahman."},{"s":"विद्याविनयसम्पन्ने ब्राह्मणे गवि हस्तिनि","src":"भगवद् गीता ५.१८","h":"विद्या और विनय से सम्पन्न ब्राह्मण, गाय, हाथी, कुत्ते और चाण्डाल में पण्डित समभाव देखता है।","e":"The wise see with equal vision a learned Brahmin, a cow, an elephant, a dog and an outcast."},{"s":"ब्रह्मण्याधाय कर्माणि सङ्गं त्यक्त्वा करोति यः","src":"भगवद् गीता ५.१०","h":"जो कर्म ब्रह्म को अर्पण करके और आसक्ति छोड़कर करता है — वह पाप से लिप्त नहीं होता।","e":"One who acts for Brahman, abandoning attachment, is not tainted by sin."},{"s":"उद्धरेदात्मनात्मानं नात्मानमवसादयेत्","src":"भगवद् गीता ६.५","h":"अपने आप से अपना उद्धार करो, आत्मा को नीचे मत गिराओ।","e":"Elevate yourself through your own effort; do not degrade yourself."},{"s":"आत्मैव ह्यात्मनो बन्धुरात्मैव रिपुरात्मनः","src":"भगवद् गीता ६.५","h":"आत्मा ही अपना मित्र है और आत्मा ही अपना शत्रु है।","e":"The self is its own friend and its own enemy."},{"s":"जितात्मनः प्रशान्तस्य परमात्मा समाहितः","src":"भगवद् गीता ६.७","h":"जिसने मन जीत लिया है, उसके लिए परमात्मा सदा समाहित है।","e":"For one who has conquered the mind, the Supreme Self is already attained."},{"s":"युञ्जन्नेवं सदात्मानं योगी नियतमानसः","src":"भगवद् गीता ६.१५","h":"इस प्रकार सदा आत्मा को योग में लगाते हुए, योगी परम शांति को प्राप्त होता है।","e":"Constantly engaging the self in yoga, the yogi of disciplined mind attains supreme peace."},{"s":"यत्र योगेश्वरः कृष्णो यत्र पार्थो धनुर्धरः","src":"भगवद् गीता १८.७८","h":"जहाँ योगेश्वर कृष्ण हैं और जहाँ धनुर्धर अर्जुन हैं — वहाँ विजय, विभूति और नीति है।","e":"Where there is Krishna and where there is Arjuna — there will always be fortune, victory and righteousness."},{"s":"मनः प्रशमनोपायो योग इत्यभिधीयते","src":"भगवद् गीता ६.३","h":"मन को शांत करने का उपाय ही योग कहलाता है।","e":"The means to calm the mind is called yoga."},{"s":"मनुष्याणां सहस्रेषु कश्चिद्यतति सिद्धये","src":"भगवद् गीता ७.३","h":"हजारों में कोई एक सिद्धि के लिए यत्न करता है।","e":"Among thousands of men, scarcely one strives for perfection."},{"s":"बहूनां जन्मनामन्ते ज्ञानवान् मां प्रपद्यते","src":"भगवद् गीता ७.१९","h":"अनेक जन्मों के अंत में, ज्ञानी मुझको प्राप्त होता है।","e":"At the end of many births, the man of wisdom takes refuge in me."},{"s":"चतुर्विधा भजन्ते मां जनाः सुकृतिनोऽर्जुन","src":"भगवद् गीता ७.१६","h":"चार प्रकार के पुण्यात्मा मुझे भजते हैं — आर्त, जिज्ञासु, अर्थार्थी और ज्ञानी।","e":"Four types of virtuous men worship me — the distressed, the seeker, the wealth-seeker, and the wise."},{"s":"ज्ञानी त्वात्मैव मे मतम्","src":"भगवद् गीता ७.१८","h":"ज्ञानी तो मेरा स्वरूप ही है — ऐसा मेरा मत है।","e":"The wise man is my very self — such is my opinion."},{"s":"अन्तकाले च मामेव स्मरन्मुक्त्वा कलेवरम्","src":"भगवद् गीता ८.५","h":"अंतकाल में मुझे स्मरण करते हुए शरीर त्यागने वाला मुझे ही प्राप्त होता है।","e":"Whoever, at the time of death, remembers me alone — reaches my state."},{"s":"यं यं वापि स्मरन्भावं त्यजत्यन्ते कलेवरम्","src":"भगवद् गीता ८.६","h":"मृत्यु के समय जिस भाव को स्मरण करते हुए शरीर छोड़ता है, उसी को प्राप्त होता है।","e":"Whatever state of being one remembers when leaving the body — that state he attains."},{"s":"अभ्यासयोगयुक्तेन चेतसा नान्यगामिना","src":"भगवद् गीता ८.८","h":"अभ्यास योग से युक्त, अन्यत्र न जाने वाले चित्त से — परम पुरुष को प्राप्त होता है।","e":"With the mind engaged in yoga practice and not wandering elsewhere — one reaches the Supreme."},{"s":"अनन्याश्चिन्तयन्तो मां ये जनाः पर्युपासते","src":"भगवद् गीता ९.२२","h":"जो अनन्य भाव से मेरा चिंतन करते हैं, उनकी योगक्षेम मैं वहन करता हूँ।","e":"For those who worship me with devotion, I carry what they lack and preserve what they have."},{"s":"पत्रं पुष्पं फलं तोयं यो मे भक्त्या प्रयच्छति","src":"भगवद् गीता ९.२६","h":"जो भक्ति से पत्र, पुष्प, फल या जल अर्पण करता है — उसे मैं स्वीकार करता हूँ।","e":"Whoever offers me a leaf, flower, fruit or water with devotion — I accept that offering."},{"s":"अहं सर्वस्य प्रभवो मत्तः सर्वं प्रवर्तते","src":"भगवद् गीता १०.८","h":"मैं ही सबका उद्गम हूँ और मुझसे ही सब कुछ प्रवृत्त होता है।","e":"I am the source of all; everything proceeds from me."},{"s":"अनित्यमसुखं लोकमिमं प्राप्य भजस्व माम्","src":"भगवद् गीता ९.३३","h":"इस नश्वर और दुखी लोक को पाकर मेरी भक्ति करो।","e":"Having come to this impermanent, joyless world, worship me with devotion."},{"s":"अहमात्मा गुडाकेश सर्वभूताशयस्थितः","src":"भगवद् गीता १०.२०","h":"मैं सब प्राणियों के हृदय में स्थित आत्मा हूँ।","e":"I am the self seated in the hearts of all creatures."},{"s":"अक्षराणामकारोऽस्मि द्वन्द्वः सामासिकस्य च","src":"भगवद् गीता १०.३३","h":"अक्षरों में मैं 'अ' हूँ, समासों में द्वंद्व हूँ।","e":"Among letters I am 'A'; among compounds I am the dual."},{"s":"मृत्युः सर्वहरश्चाहमुद्भवश्च भविष्यताम्","src":"भगवद् गीता १०.३४","h":"मैं सब को हरने वाला मृत्यु हूँ और भविष्य में होने वालों का उद्गम भी।","e":"I am all-devouring death, and I am the origin of future beings."},{"s":"यद्यद्विभूतिमत्सत्त्वं श्रीमदूर्जितमेव वा","src":"भगवद् गीता १०.४१","h":"जो कुछ भी विभूतिमान, कांतिमान और ऊर्जावान है — वह मेरे तेज के अंश से उत्पन्न है।","e":"Whatever being has glory, beauty and power — know that to be a spark of my splendor."},{"s":"कालोऽस्मि लोकक्षयकृत्प्रवृद्धो","src":"भगवद् गीता ११.३२","h":"मैं काल हूँ, लोकों का नाश करने वाला — अभी प्रवृद्ध हो रहा हूँ।","e":"I am mighty Time, the destroyer of all worlds, fully engaged."},{"s":"नाहं वेदैर्न तपसा न दानेन न चेज्यया","src":"भगवद् गीता ११.५३","h":"मैं न वेद से, न तप से, न दान से, न यज्ञ से — इस रूप में देखा जा सकता हूँ।","e":"I cannot be seen through study of the Vedas, austerity, charity or ritual."},{"s":"मय्यावेश्य मनो ये मां नित्ययुक्ता उपासते","src":"भगवद् गीता १२.२","h":"जो अपना मन मुझमें लगाकर श्रद्धा से उपासना करते हैं — वे मुझे सर्वोत्तम योगी लगते हैं।","e":"Those who fix their minds on me, ever united with me in devotion — I consider them best."},{"s":"क्लेशोऽधिकतरस्तेषामव्यक्तासक्तचेतसाम्","src":"भगवद् गीता १२.५","h":"अव्यक्त में आसक्त चित्त वालों को कष्ट अधिक होता है।","e":"The path of the unmanifest is more difficult for embodied beings."},{"s":"सर्वभूतहिते रताः","src":"भगवद् गीता १२.४","h":"सब प्राणियों के हित में रत रहने वाला भक्त मुझे प्राप्त होता है।","e":"Devoted to the welfare of all beings — such a one comes to me."},{"s":"क्षेत्रज्ञं चापि मां विद्धि सर्वक्षेत्रेषु भारत","src":"भगवद् गीता १३.२","h":"सब क्षेत्रों में क्षेत्रज्ञ भी मुझे ही जानो।","e":"Know me as the knower of the field in all fields."},{"s":"अमानित्वमदम्भित्वमहिंसा क्षान्तिरार्जवम्","src":"भगवद् गीता १३.७","h":"मान न करना, दंभ न करना, अहिंसा, क्षमा, सरलता — ये ज्ञान के लक्षण हैं।","e":"Humility, non-pretension, non-violence, forbearance, simplicity — these are declared as knowledge."},{"s":"ज्ञेयं यत्तत्प्रवक्ष्यामि यज्ज्ञात्वामृतमश्नुते","src":"भगवद् गीता १३.१२","h":"जिसे जानकर मनुष्य अमृत को प्राप्त होता है, उस ज्ञेय को मैं बताता हूँ।","e":"I will declare what is to be known — knowing which, one attains immortality."},{"s":"सत्त्वं रजस्तम इति गुणाः प्रकृतिसम्भवाः","src":"भगवद् गीता १४.५","h":"सत्व, रज और तम — ये प्रकृति से उत्पन्न तीन गुण हैं जो आत्मा को बाँधते हैं।","e":"Goodness, passion and ignorance — these three qualities bind the immortal soul."},{"s":"सत्त्वात्सञ्जायते ज्ञानं रजसो लोभ एव च","src":"भगवद् गीता १४.१७","h":"सत्व से ज्ञान, रज से लोभ और तम से प्रमाद और मोह उत्पन्न होते हैं।","e":"From sattva arises knowledge; from rajas, greed; from tamas, negligence and delusion."},{"s":"गुणेभ्यश्च परं वेत्ति मद्भावं सोऽधिगच्छति","src":"भगवद् गीता १४.१९","h":"जो गुणों से परे देखता है, वह मेरे भाव को प्राप्त होता है।","e":"One who sees beyond the three qualities — attains my nature."},{"s":"द्वाविमौ पुरुषौ लोके क्षरश्चाक्षर एव च","src":"भगवद् गीता १५.१६","h":"इस जगत में दो पुरुष हैं — क्षर और अक्षर।","e":"In this world there are two kinds of beings — the perishable and the imperishable."},{"s":"यः शास्त्रविधिमुत्सृज्य वर्तते कामकारतः","src":"भगवद् गीता १६.२३","h":"जो शास्त्र विधि छोड़कर मनमाना आचरण करता है — वह सिद्धि, सुख और परम गति नहीं पाता।","e":"One who discards scriptural injunctions and acts on whims attains neither perfection nor happiness."},{"s":"अभयं सत्त्वसंशुद्धिर्ज्ञानयोगव्यवस्थितिः","src":"भगवद् गीता १६.१","h":"निर्भयता, अंतःकरण की शुद्धि, ज्ञान में स्थिति — ये दैवी सम्पद के लक्षण हैं।","e":"Fearlessness, purity of heart, steadfastness in knowledge — these are divine qualities."},{"s":"त्रिविधं नरकस्येदं द्वारं नाशनमात्मनः","src":"भगवद् गीता १६.२१","h":"काम, क्रोध और लोभ — ये तीन नरक के द्वार आत्मा का नाश करने वाले हैं।","e":"Lust, anger and greed — these three are the gateways to hell destroying the self."},{"s":"ॐ तत्सदिति निर्देशो ब्रह्मणस्त्रिविधः स्मृतः","src":"भगवद् गीता १७.२३","h":"ॐ, तत् और सत् — ये तीन ब्रह्म के निर्देश कहे गए हैं।","e":"Om, Tat and Sat — these are the three designations of Brahman."},{"s":"श्रद्धावाँ लभते ज्ञानं","src":"भगवद् गीता १७.३","h":"मनुष्य की श्रद्धा उसके स्वभाव के अनुसार होती है — जो जैसी श्रद्धा रखता है, वैसा ही बन जाता है।","e":"A person's faith reflects their nature — what one has faith in, that one becomes."},{"s":"सर्वधर्मान्परित्यज्य मामेकं शरणं व्रज","src":"भगवद् गीता १८.६६","h":"सब धर्मों को छोड़कर मेरी शरण में आ जा — मैं तुझे सब पापों से मुक्त कर दूँगा।","e":"Abandon all varieties of dharma and surrender unto me alone — I will free you from all sins."},{"s":"इष्टोऽसि मे दृढमिति ततो वक्ष्यामि ते हितम्","src":"भगवद् गीता १८.६४","h":"तू मुझे अत्यंत प्रिय है — इसलिए तेरे हित की बात कहूँगा।","e":"You are very dear to me — therefore I shall speak what is good for you."},{"s":"मन्मना भव मद्भक्तो मद्याजी मां नमस्कुरु","src":"भगवद् गीता १८.६५","h":"मुझमें मन लगा, मेरा भक्त बन, मेरी पूजा कर, मुझे प्रणाम कर।","e":"Fix your mind on me, be my devotee, worship me, bow down to me."},{"s":"यत्र योगेश्वरः कृष्णो यत्र पार्थो धनुर्धरः","src":"भगवद् गीता १८.७८","h":"जहाँ योगेश्वर श्रीकृष्ण हैं और जहाँ धनुर्धारी अर्जुन हैं — वहाँ श्री, विजय, विभूति और नीति है।","e":"Where there is Krishna and where there is Arjuna — there fortune, victory and righteousness ever dwell."},{"s":"व्यासप्रसादाच्छ्रुतवानेतद्गुह्यमहं परम्","src":"भगवद् गीता १८.७५","h":"व्यास की कृपा से मैंने यह परम गुह्य योग सुना।","e":"By the grace of Vyasa I have heard this supreme secret yoga."},{"s":"आयुषः क्षण एकोऽपि न लभ्यः स्वर्णकोटिभिः","src":"महाभारत — शान्तिपर्व","h":"जीवन का एक क्षण भी करोड़ों स्वर्ण से नहीं मिलता।","e":"Not even one moment of life can be purchased with crores of gold."},{"s":"कालः पचति भूतानि कालः संहरते प्रजाः","src":"महाभारत — वनपर्व","h":"काल सब प्राणियों को पकाता है और काल ही सबको निगल जाता है।","e":"Time ripens all beings; Time consumes all creatures."},{"s":"अहिंसा परमो धर्मः धर्म हिंसा तथैव च","src":"महाभारत — अनुशासनपर्व","h":"अहिंसा सर्वोच्च धर्म है — और धर्म की रक्षा के लिए हिंसा भी।","e":"Non-violence is the highest dharma, yet violence in protection of dharma is also dharma."},{"s":"सर्वे क्षयान्ता निचयाः पतनान्ताः समुच्छ्रयाः","src":"महाभारत — शान्तिपर्व","h":"सभी संग्रह अंततः नष्ट होते हैं और सभी उन्नतियाँ पतन में समाप्त होती हैं।","e":"All accumulations end in loss; all rises end in a fall."},{"s":"न भूतपूर्वं न भविष्यति — वर्तमानमेव सत्यम्","src":"महाभारत — उद्योगपर्व","h":"जो हुआ वह लौटेगा नहीं, जो होगा अज्ञात है — केवल वर्तमान सत्य है।","e":"The past returns not, the future is unknown — only the present is real."},{"s":"धर्म एव हतो हन्ति धर्मो रक्षति रक्षितः","src":"महाभारत — वनपर्व","h":"जो धर्म को मारता है, धर्म उसे मार देता है; जो धर्म की रक्षा करता है, धर्म उसकी रक्षा करता है।","e":"Dharma, when destroyed, destroys; when protected, protects."},{"s":"सत्यमेव जयते नानृतं सत्येन पन्था विततो देवयानः","src":"महाभारत — वनपर्व","h":"सत्य की ही जय होती है, असत्य की नहीं — सत्य से देवयान मार्ग प्रशस्त होता है।","e":"Truth alone triumphs, not falsehood — through truth the divine path is opened."},{"s":"शरीरमाद्यं खलु धर्मसाधनम्","src":"महाभारत — वनपर्व","h":"शरीर ही धर्म का प्रथम साधन है।","e":"The body indeed is the primary instrument of dharma."},{"s":"आत्मा विजितः स्वर्गः पराजितस्तु नरकः","src":"महाभारत — शान्तिपर्व","h":"जीती हुई आत्मा स्वर्ग है और पराजित आत्मा नरक।","e":"The conquered self is heaven; the defeated self is hell."},{"s":"विद्वान् सर्वत्र पूज्यते","src":"महाभारत — शान्तिपर्व","h":"विद्वान की सर्वत्र पूजा होती है।","e":"The learned person is honored everywhere."},{"s":"क्षमा बलमशक्तानां शक्तानां भूषणं क्षमा","src":"महाभारत — उद्योगपर्व","h":"क्षमा कमज़ोरों का बल है और शक्तिशालियों का आभूषण।","e":"Forgiveness is the strength of the weak and the ornament of the strong."},{"s":"नास्ति सत्यसमो धर्मो नास्ति सत्यात् परं पदम्","src":"महाभारत — वनपर्व","h":"सत्य के समान धर्म नहीं है और सत्य से बड़ी कोई अवस्था नहीं।","e":"There is no dharma equal to truth; no state higher than truth."},{"s":"मातृवत्परदारेषु परद्रव्येषु लोष्टवत्","src":"महाभारत — शान्तिपर्व","h":"दूसरे की पत्नी को माता के समान और दूसरे के धन को मिट्टी के समान देखो।","e":"Regard another's wife as your mother and another's wealth as mere dust."},{"s":"न कश्चित् कस्यचिन्मित्रं न कश्चित् कस्यचिद्रिपुः","src":"महाभारत — उद्योगपर्व","h":"कोई किसी का न सच्चा मित्र है न शत्रु — कर्म ही मित्र-शत्रु बनाते हैं।","e":"No one is anyone's true friend or enemy — it is actions that create them."},{"s":"सुखदुःखे समे कृत्वा लाभालाभौ जयाजयौ","src":"महाभारत — भीष्मपर्व","h":"सुख-दुःख, लाभ-हानि, जय-पराजय को समान मानकर युद्ध करो।","e":"Treating pleasure and pain alike, gain and loss alike, victory and defeat alike — fight."},{"s":"यो ध्रुवाणि परित्यज्य अध्रुवाणि निषेवते","src":"महाभारत — वनपर्व","h":"जो निश्चित को छोड़कर अनिश्चित को पकड़ता है — वह नष्ट होता है।","e":"One who abandons the certain to pursue the uncertain — perishes."},{"s":"कालः कालं प्रतीक्षते न","src":"महाभारत — उद्योगपर्व","h":"काल किसी की प्रतीक्षा नहीं करता।","e":"Time waits for no one."},{"s":"चिन्तनीयः कथं कालः क्षणं वा न विनश्यति","src":"महाभारत — आदिपर्व","h":"विचार करो — एक क्षण भी व्यर्थ न जाए।","e":"Reflect — let not even a single moment be wasted."},{"s":"अनर्थः पुरुषस्यार्थः अर्थस्तत्त्वं न बुध्यते","src":"महाभारत — शान्तिपर्व","h":"जो धन अनर्थ का कारण बने, वह धन नहीं — और जो तत्त्व नहीं जानता वह पुरुष नहीं।","e":"Wealth that leads to harm is not true wealth; one who knows not truth is not truly human."},{"s":"न दानेन समो यज्ञो न सत्येन समा क्रिया","src":"महाभारत — अनुशासनपर्व","h":"दान के समान कोई यज्ञ नहीं और सत्य के समान कोई क्रिया नहीं।","e":"No sacrifice equals charity; no action equals truth."},{"s":"एकः पापानि कुरुते फलं भुङ्क्ते महाजनः","src":"महाभारत — वनपर्व","h":"पाप एक करता है पर फल सबको भोगना पड़ता है।","e":"One person commits sin but the fruit is suffered by all."},{"s":"उत्साहो बलवानार्य नास्त्युत्साहात्परं बलम्","src":"महाभारत — उद्योगपर्व","h":"उत्साह अत्यंत बलवान है — उत्साह से बढ़कर कोई बल नहीं।","e":"Enthusiasm is the mightiest of strengths — nothing surpasses enthusiasm."},{"s":"आपदां कथितः पन्था इन्द्रियाणामसंयमः","src":"महाभारत — वनपर्व","h":"इन्द्रियों का असंयम आपदाओं का मार्ग है।","e":"Lack of control over the senses is the path to calamity."},{"s":"न हि कश्चित् स्वयं जातः कर्तुमर्हति किञ्चन","src":"महाभारत — शान्तिपर्व","h":"कोई भी अपने बल पर अकेले कुछ नहीं कर सकता — सब परस्पर निर्भर हैं।","e":"No one can accomplish anything alone — all are interdependent."},{"s":"प्रवृत्तिरेषा भूतानां निवृत्तिस्तु महाफला","src":"महाभारत — शान्तिपर्व","h":"प्रवृत्ति सब जीवों का स्वभाव है — पर निवृत्ति का फल महान है।","e":"Activity is the nature of beings, but withdrawal brings the greatest fruit."},{"s":"एतद्वेदितव्यं हि यद्यस्मिन् काल आगते","src":"महाभारत — वनपर्व","h":"जिस समय जो जानना चाहिए वह जानना ही ज्ञान है।","e":"To know what should be known at the right time — that is wisdom."},{"s":"सर्वः परवशो दुःखी सर्व आत्मवशः सुखी","src":"महाभारत — शान्तिपर्व","h":"जो दूसरों के वश में है वह दुखी है और जो स्वयं के वश में है वह सुखी।","e":"All who are dependent on others are miserable; all who are self-mastered are happy."},{"s":"धर्मे चरतां क्लेशो दुर्लभं तप्यते","src":"महाभारत — वनपर्व","h":"धर्म में चलने वालों को कष्ट है — पर वह कष्ट तपस्या का दुर्लभ फल देता है।","e":"Following dharma brings hardship — but that hardship yields the rare fruit of austerity."},{"s":"जलबिन्दुनिपातेन क्रमशः पूर्यते घटः","src":"महाभारत — शान्तिपर्व","h":"जल की बूँदें गिरने से घड़ा धीरे-धीरे भर जाता है — ऐसे ही सब कर्तव्य करो।","e":"A pot is filled gradually by drops of water — so too all duties are fulfilled step by step."},{"s":"परोक्षे कार्यहन्तारं प्रत्यक्षे प्रियवादिनम्","src":"महाभारत — उद्योगपर्व","h":"जो पीठ पीछे काम बिगाड़े और सामने मीठा बोले — वह मित्र नहीं है।","e":"One who harms you behind your back but speaks sweetly to your face — is no true friend."},{"s":"तपस्स्वाध्यायनिरतं तपस्वी वाग्विदां वरम्","src":"वाल्मीकि रामायण — बालकाण्ड","h":"तपस्या और स्वाध्याय में निरत वाग्मियों में श्रेष्ठ तपस्वी को मैं नमन करता हूँ।","e":"I salute the ascetic devoted to austerity and study — the best among the eloquent."},{"s":"को नु अस्मिन्साम्प्रतं लोके गुणवान् कश्च वीर्यवान्","src":"वाल्मीकि रामायण — बालकाण्ड","h":"इस समय इस लोक में गुणवान, वीर्यवान, धर्मज्ञ और कृतज्ञ कौन है?","e":"Who in this world today is virtuous, mighty, righteous and grateful?"},{"s":"रामो विग्रहवान् धर्मः साधुः सत्यपराक्रमः","src":"वाल्मीकि रामायण — बालकाण्ड","h":"राम साक्षात् धर्म का विग्रह हैं — सज्जन और सत्य-पराक्रमी।","e":"Rama is the embodiment of dharma itself — noble and of true valor."},{"s":"अपि स्वर्णमयी लङ्का न मे लक्ष्मण रोचते","src":"वाल्मीकि रामायण — युद्धकाण्ड","h":"हे लक्ष्मण, सोने की लंका भी मुझे नहीं भाती — जननी और जन्मभूमि स्वर्ग से भी बढ़कर है।","e":"Even golden Lanka does not appeal to me — one's mother and motherland are greater than heaven."},{"s":"जननी जन्मभूमिश्च स्वर्गादपि गरीयसी","src":"वाल्मीकि रामायण — युद्धकाण्ड","h":"माँ और मातृभूमि स्वर्ग से भी श्रेष्ठ हैं।","e":"One's mother and motherland are superior even to heaven."},{"s":"न विना पुरुषव्याघ्रं सुखमेकापि शर्वरी","src":"वाल्मीकि रामायण — अयोध्याकाण्ड","h":"उस श्रेष्ठ पुरुष के बिना एक रात भी सुखपूर्वक नहीं बिती।","e":"Not a single night passes in happiness without that great man."},{"s":"धर्मात्मा सत्यसन्धश्च रामो दाशरथिर्यदि","src":"वाल्मीकि रामायण — अयोध्याकाण्ड","h":"यदि दशरथपुत्र राम धर्मात्मा और सत्यनिष्ठ हैं — तो मेरी बात मानें।","e":"If Rama, son of Dasharatha, is indeed righteous and true to his word — let him honor my request."},{"s":"एतावदुक्त्वा वचनं रामो धर्मभृतां वरः","src":"वाल्मीकि रामायण — अयोध्याकाण्ड","h":"धर्म के पालकों में श्रेष्ठ राम ने इतना कहकर वन को प्रस्थान किया।","e":"Saying these words, Rama — foremost among upholders of dharma — departed to the forest."},{"s":"न त्यजेयं कथञ्चन","src":"वाल्मीकि रामायण — अयोध्याकाण्ड","h":"मैं किसी भी परिस्थिति में अपना धर्म नहीं छोड़ूँगा।","e":"I shall not abandon my duty under any circumstance."},{"s":"पिता हि प्रथमो धर्मः","src":"वाल्मीकि रामायण — अयोध्याकाण्ड","h":"पिता की आज्ञा का पालन ही पहला धर्म है।","e":"The first duty is obedience to one's father."},{"s":"तृष्णां छिन्धि भव क्षेमी तृष्णाया नास्ति निष्कृतिः","src":"वाल्मीकि रामायण — अरण्यकाण्ड","h":"तृष्णा को काट डालो और शांत हो जाओ — तृष्णा का कोई अंत नहीं।","e":"Cut off desire and become peaceful — there is no end to craving."},{"s":"न जातु कामः कामानामुपभोगेन शाम्यति","src":"वाल्मीकि रामायण — अरण्यकाण्ड","h":"कभी भी कामनाएँ भोग से शांत नहीं होतीं — बल्कि घी से अग्नि की तरह बढ़ती हैं।","e":"Desire is never quenched by enjoyment — like fire fed with ghee, it only grows."},{"s":"रामं दशरथं विद्धि मां विद्धि जनकात्मजाम्","src":"वाल्मीकि रामायण — अरण्यकाण्ड","h":"राम को दशरथ समझो और मुझे जनककुमारी — इस जंगल को अयोध्या।","e":"Know Rama as Dasharatha, know me as Janaki — and know this forest as Ayodhya."},{"s":"यो हि दत्त्वा मनःप्रीतिं पश्चात्तापं न विन्दति","src":"वाल्मीकि रामायण — किष्किन्धाकाण्ड","h":"जो प्रसन्नता से देकर पश्चात्ताप नहीं करता — वह सच्चा दाता है।","e":"One who gives gladly and does not repent — is a true giver."},{"s":"मित्रं प्राप्य तु संपन्नं विशेषं नाधिगच्छति","src":"वाल्मीकि रामायण — किष्किन्धाकाण्ड","h":"सच्चा मित्र पाकर भी जो कुछ विशेष नहीं पाता वह भाग्यहीन है।","e":"One who gains a true friend yet finds no benefit — is truly unfortunate."},{"s":"साहसं मूलमापदाम्","src":"वाल्मीकि रामायण — किष्किन्धाकाण्ड","h":"साहस आपदाओं का मूल है।","e":"Rashness is the root of calamities."},{"s":"मनसा चिन्तितं कार्यं वाचा नैव प्रकाशयेत्","src":"वाल्मीकि रामायण — सुन्दरकाण्ड","h":"मन में सोचे काम को वाणी से मत प्रकट करो — रहस्य रखना बुद्धिमान का लक्षण है।","e":"Do not reveal in speech what is planned in the mind — secrecy is a mark of wisdom."},{"s":"विनाशकाले विपरीतबुद्धिः","src":"वाल्मीकि रामायण — सुन्दरकाण्ड","h":"विनाश के समय बुद्धि उल्टी हो जाती है।","e":"At the time of destruction, one's intellect turns perverse."},{"s":"दैवं पुरुषकारेण यः प्रसाधयति","src":"वाल्मीकि रामायण — सुन्दरकाण्ड","h":"जो पुरुषार्थ से भाग्य को भी साध लेता है — वही सच्चा वीर है।","e":"One who masters even fate through effort — is the true hero."},{"s":"सर्वस्य हृदि संविष्टो न दृश्यते","src":"वाल्मीकि रामायण — सुन्दरकाण्ड","h":"वह सबके हृदय में बसा है पर दिखता नहीं।","e":"He dwells in the heart of all yet is not seen."},{"s":"असाध्यं साधयेत् धीरः","src":"वाल्मीकि रामायण — सुन्दरकाण्ड","h":"धीर पुरुष असाध्य को भी साध लेता है।","e":"The courageous one accomplishes even what seems impossible."},{"s":"वृक्षाः पर्वतवासिनः न भयात्पतितास्ते","src":"वाल्मीकि रामायण — युद्धकाण्ड","h":"पर्वत पर रहने वाले वृक्ष भय से नहीं गिरते — धीरे-धीरे समय से गिरते हैं।","e":"Trees dwelling on mountains do not fall from fear — they fall gradually in their time."},{"s":"नयनाभ्यां प्रवर्षामि","src":"वाल्मीकि रामायण — युद्धकाण्ड","h":"मेरी आँखें वर्षा करेंगी — राम के बिना जीवन व्यर्थ है।","e":"My eyes shall pour like rain — life without Rama is meaningless."},{"s":"नात्यन्तमपि संभाषा कार्या परपुरांगना","src":"वाल्मीकि रामायण — युद्धकाण्ड","h":"अत्यधिक परस्त्री से वार्तालाप भी नहीं करना चाहिए।","e":"One should not converse excessively with another's wife."},{"s":"यस्य नास्ति स्वयं प्रज्ञा शास्त्रं तस्य करोति किम्","src":"वाल्मीकि रामायण — युद्धकाण्ड","h":"जिसके पास स्वयं का विवेक नहीं, उसके लिए शास्त्र क्या कर सकता है?","e":"What can the scriptures do for one who lacks personal wisdom?"},{"s":"धर्मात् कामश्च अर्थश्च धर्मादेव च संसृतिः","src":"वाल्मीकि रामायण — उत्तरकाण्ड","h":"धर्म से ही काम और अर्थ मिलते हैं — धर्म से ही संसार चलता है।","e":"From dharma come desire and wealth; from dharma comes the entire cycle of life."},{"s":"तेजस्विनावधीतमस्तु","src":"वाल्मीकि रामायण — उत्तरकाण्ड","h":"हम दोनों के अध्ययन में तेज आए — यही मंगलकामना।","e":"May our study be filled with radiance — this is the blessing."},{"s":"यत् किञ्चिदुच्यते लोके स्त्रियो वा पुरुषा अपि","src":"वाल्मीकि रामायण — उत्तरकाण्ड","h":"इस संसार में जो कुछ भी कहा जाता है — स्त्री हो या पुरुष — वह सब कर्म का फल है।","e":"Whatever is spoken in this world, by woman or man — all is the fruit of one's karma."},{"s":"उत्तिष्ठत जाग्रत प्राप्य वरान्निबोधत","src":"कठोपनिषद् १.३.१४","h":"उठो, जागो और श्रेष्ठ से ज्ञान प्राप्त करो।","e":"Arise, awake and learn from the best."},{"s":"नायमात्मा प्रवचनेन लभ्यो न मेधया","src":"कठोपनिषद् १.२.२३","h":"यह आत्मा न प्रवचन से मिलती है, न मेधा से — यह जिसे चुनती है उसे मिलती है।","e":"The Self is not attained by lectures or by intelligence — it reveals itself to one it chooses."},{"s":"अङ्गुष्ठमात्रः पुरुषो ज्योतिरिवाधूमकः","src":"कठोपनिषद् २.१.१३","h":"अंगूठे के आकार का पुरुष धूमरहित ज्योति की तरह भीतर रहता है।","e":"The person of the size of a thumb dwells within — like a flame without smoke."},{"s":"यदेवेह तदमुत्र यदमुत्र तदन्विह","src":"कठोपनिषद् २.१.१०","h":"जो यहाँ है वही वहाँ है, और जो वहाँ है वह यहाँ भी है।","e":"What is here is there; what is there is also here."},{"s":"मृत्योः स मृत्युमाप्नोति य इह नानेव पश्यति","src":"कठोपनिषद् २.१.११","h":"जो यहाँ अनेक देखता है वह मृत्यु से मृत्यु को प्राप्त होता है।","e":"One who sees diversity here goes from death to death."},{"s":"श्रेयश्च प्रेयश्च मनुष्यमेतः","src":"कठोपनिषद् १.२.१","h":"श्रेय और प्रेय दोनों मनुष्य के पास आते हैं — बुद्धिमान श्रेय को चुनता है।","e":"Both the good and the pleasant come to a person — the wise chooses the good."},{"s":"न संपश्यति मृत्युं पश्यति","src":"कठोपनिषद् २.१.७","h":"जो जानता है वह मृत्यु नहीं देखता।","e":"One who knows does not see death."},{"s":"हन्तेदानीमिमं नचिकेतसं वृणे","src":"कठोपनिषद् १.१.२९","h":"यम ने कहा — मैं नचिकेता को यह ज्ञान देता हूँ।","e":"Yama said — I grant this knowledge to Nachiketa."},{"s":"ब्रह्मविद् ब्रह्मैव भवति","src":"मुण्डकोपनिषद् ३.२.९","h":"ब्रह्म को जानने वाला ब्रह्म ही हो जाता है।","e":"One who knows Brahman becomes Brahman."},{"s":"सत्यमेव जयते नानृतम्","src":"मुण्डकोपनिषद् ३.१.६","h":"सत्य की ही जीत होती है, असत्य की नहीं।","e":"Truth alone triumphs, not falsehood."},{"s":"द्वा सुपर्णा सयुजा सखाया","src":"मुण्डकोपनिषद् ३.१.१","h":"दो सुंदर पक्षी एक ही पेड़ पर बैठे हैं — एक खाता है और दूसरा देखता है।","e":"Two beautiful birds sit on the same tree — one eats, the other merely watches."},{"s":"तमेव विदित्वातिमृत्युमेति","src":"मुण्डकोपनिषद् ३.२.९","h":"उसे जानकर ही मृत्यु को पार किया जाता है — कोई दूसरा मार्ग नहीं।","e":"Knowing him alone, one crosses beyond death — there is no other path."},{"s":"यः सर्वज्ञः सर्वविद्यस्य ज्ञानमयं तपः","src":"मुण्डकोपनिषद् १.१.९","h":"जो सर्वज्ञ है, जो सब जानता है — उसकी तपस्या ज्ञानमय है।","e":"He who is all-knowing, who knows all — his austerity is made of knowledge."},{"s":"क्षरः सर्वाणि भूतानि कूटस्थोऽक्षर उच्यते","src":"मुण्डकोपनिषद् २.१.२","h":"सब भूत क्षर हैं — अविनाशी को अक्षर कहते हैं।","e":"All beings are perishable — the immutable is called the imperishable."},{"s":"एतज्ज्ञेयं नित्यमेवात्मसंस्थं","src":"मुण्डकोपनिषद् ३.१.३","h":"यह जानने योग्य आत्मा सदा अपने भीतर विद्यमान है।","e":"The Self, worth knowing, is always dwelling within."},{"s":"तत् त्वम् असि","src":"छान्दोग्योपनिषद् ६.८.७","h":"तू वही है — तुम ही वह परम ब्रह्म हो।","e":"That thou art — you are the ultimate Brahman."},{"s":"सर्वं खल्विदं ब्रह्म","src":"छान्दोग्योपनिषद् ३.१४.१","h":"यह सब कुछ निश्चित ही ब्रह्म है।","e":"All this is verily Brahman."},{"s":"मन एव मनुष्याणां कारणं बन्धमोक्षयोः","src":"छान्दोग्योपनिषद् (अमृतबिन्दु)","h":"मन ही बंधन और मोक्ष का कारण है।","e":"Mind alone is the cause of bondage and liberation."},{"s":"आत्मनि खल्विदं सर्वम्","src":"छान्दोग्योपनिषद् ७.२५.२","h":"यह सब कुछ आत्मा में ही है।","e":"All of this is indeed in the Self."},{"s":"यथा सौम्य एकेन मृत्पिण्डेन","src":"छान्दोग्योपनिषद् ६.१.४","h":"जैसे एक मिट्टी से सब मिट्टी के पदार्थ जाने जाते हैं — वैसे एक से सब जाना जाता है।","e":"Just as by knowing one lump of clay all clay objects are known — so is the one from which all is known."},{"s":"एकमेवाद्वितीयम्","src":"छान्दोग्योपनिषद् ६.२.१","h":"वह एक ही है — अद्वितीय।","e":"It is one without a second."},{"s":"अहं ब्रह्मास्मि","src":"बृहदारण्यकोपनिषद् १.४.१०","h":"मैं ब्रह्म हूँ।","e":"I am Brahman."},{"s":"असतो मा सद्गमय तमसो मा ज्योतिर्गमय","src":"बृहदारण्यकोपनिषद् १.३.२८","h":"असत्य से सत्य की ओर ले चलो, अंधकार से प्रकाश की ओर।","e":"Lead me from the unreal to the real; from darkness to light."},{"s":"मृत्योर्मा अमृतं गमय","src":"बृहदारण्यकोपनिषद् १.३.२८","h":"मृत्यु से अमृत की ओर ले चलो।","e":"Lead me from death to immortality."},{"s":"पूर्णमदः पूर्णमिदं पूर्णात्पूर्णमुदच्यते","src":"बृहदारण्यकोपनिषद् ५.१","h":"वह पूर्ण है, यह पूर्ण है — पूर्ण से पूर्ण निकलता है और पूर्ण ही शेष रहता है।","e":"That is complete; this is complete. From the complete the complete emerges, and the complete remains."},{"s":"नेह नानास्ति किञ्चन","src":"बृहदारण्यकोपनिषद् ४.४.१९","h":"यहाँ कोई विविधता नहीं है — जो अनेकता देखता है वह मृत्यु से मृत्यु पाता है।","e":"There is no diversity here — one who sees diversity goes from death to death."},{"s":"विज्ञानमानन्दं ब्रह्म","src":"बृहदारण्यकोपनिषद् ३.९.२८","h":"ज्ञान और आनंद ही ब्रह्म है।","e":"Consciousness and bliss — that is Brahman."},{"s":"अयमात्मा ब्रह्म","src":"बृहदारण्यकोपनिषद् २.५.१९","h":"यह आत्मा ही ब्रह्म है।","e":"This Self is Brahman."},{"s":"सोऽहम्","src":"बृहदारण्यकोपनिषद् ४.४","h":"वह मैं हूँ — हर श्वास के साथ।","e":"I am That — with every breath."},{"s":"ईशावास्यमिदं सर्वं यत्किञ्च जगत्यां जगत्","src":"ईशावास्योपनिषद् १","h":"इस गतिशील जगत में जो कुछ भी है — सब ईश्वर से आच्छादित है।","e":"All this, whatever exists in this moving world, is pervaded by the Lord."},{"s":"तेन त्यक्तेन भुञ्जीथाः","src":"ईशावास्योपनिषद् १","h":"उसे त्याग द्वारा भोगो — लोभ मत करो।","e":"Enjoy through renunciation — do not covet."},{"s":"कुर्वन्नेवेह कर्माणि जिजीविषेच्छतं समाः","src":"ईशावास्योपनिषद् २","h":"कर्म करते हुए सौ वर्ष जीने की इच्छा करो — यही मनुष्य का मार्ग है।","e":"Doing karma thus, one may wish to live a hundred years — this is the way for man."},{"s":"अन्धं तमः प्रविशन्ति येऽविद्यामुपासते","src":"ईशावास्योपनिषद् ९","h":"जो अविद्या की उपासना करते हैं वे घोर अंधकार में जाते हैं।","e":"Those who worship ignorance enter dense darkness."},{"s":"सत्यं वद धर्मं चर","src":"तैत्तिरीयोपनिषद् १.११","h":"सत्य बोलो, धर्म का आचरण करो।","e":"Speak the truth; practice dharma."},{"s":"मातृदेवो भव पितृदेवो भव","src":"तैत्तिरीयोपनिषद् १.११","h":"माता को देवता मानो, पिता को देवता मानो।","e":"Let your mother be your god; let your father be your god."},{"s":"आचार्यदेवो भव अतिथिदेवो भव","src":"तैत्तिरीयोपनिषद् १.११","h":"गुरु को देवता मानो, अतिथि को देवता मानो।","e":"Let your teacher be your god; let your guest be your god."},{"s":"आनन्दो ब्रह्मेति व्यजानात्","src":"तैत्तिरीयोपनिषद् ३.६","h":"उसने जाना — आनंद ही ब्रह्म है।","e":"He realized — bliss is Brahman."},{"s":"सोऽकामयत बहु स्यां प्रजायेयेति","src":"तैत्तिरीयोपनिषद् २.६","h":"उसने इच्छा की — मैं बहुत हो जाऊँ, उत्पन्न हो जाऊँ।","e":"He desired — may I become many, may I be born."},{"s":"आयुषः क्षणमेकं हि सर्वरत्नैर्न विक्रीणीते","src":"चाणक्य नीति","h":"जीवन का एक क्षण सब रत्नों से भी नहीं खरीदा जा सकता।","e":"Not a single moment of life can be sold for all the jewels of the world."},{"s":"पुस्तकेषु च या विद्या परहस्तेषु च यद्धनम्","src":"चाणक्य नीति","h":"पुस्तक में पढ़ी विद्या और दूसरे के हाथ में रखा धन — आवश्यकता पर काम नहीं आते।","e":"Knowledge only in books and wealth in another's hands — neither is useful when needed."},{"s":"दूरात् पर्वतरम्याणि रूपयौवनं च मानुषे","src":"चाणक्य नीति","h":"पर्वत दूर से सुंदर लगते हैं, रूप और यौवन भी दूर से।","e":"Mountains appear beautiful from a distance; so do youth and beauty."},{"s":"को हि भारः समर्थानां किमदूरं विजानताम्","src":"चाणक्य नीति","h":"समर्थ के लिए कौन सा भार है? जानकार के लिए क्या दूर है?","e":"What burden is heavy for the capable? What is distant for the knowledgeable?"},{"s":"नाभिषेको न संस्कारः सिंहस्य क्रियते मृगैः","src":"चाणक्य नीति","h":"सिंह का अभिषेक पशुओं से नहीं होता — स्वयं के पराक्रम से विक्रम होता है।","e":"The lion's coronation is not performed by deer — valor crowns itself."},{"s":"यस्य नास्ति स्वयं प्रज्ञा न स जीवति मानवः","src":"चाणक्य नीति","h":"जिसके पास स्वयं की बुद्धि नहीं — वह मनुष्य जीवित नहीं कहलाता।","e":"One without their own wisdom does not truly live."},{"s":"एकेनापि सुवृक्षेण पुष्पितेन सुगन्धिना","src":"चाणक्य नीति","h":"एक सुगंधित वृक्ष से पूरा वन सुगंधित हो जाता है — एक गुणी पुत्र से कुल।","e":"One fragrant tree in bloom perfumes the whole forest — so one virtuous son glorifies the family."},{"s":"विद्या ददाति विनयं विनयाद् याति पात्रताम्","src":"हितोपदेश","h":"विद्या विनय देती है, विनय से योग्यता आती है।","e":"Knowledge gives humility; from humility comes worthiness."},{"s":"परोपकाराय फलन्ति वृक्षाः परोपकाराय वहन्ति नद्यः","src":"चाणक्य नीति","h":"वृक्ष दूसरों के लिए फल देते हैं, नदियाँ दूसरों के लिए बहती हैं — संत भी इसी लिए जन्म लेते हैं।","e":"Trees bear fruit for others, rivers flow for others — so too do the saintly live for others."},{"s":"अलसस्य कुतो विद्या अविद्यस्य कुतो धनम्","src":"चाणक्य नीति","h":"आलसी को विद्या कहाँ, अविद्वान को धन कहाँ, अशांत को सुख कहाँ?","e":"Where is knowledge for the lazy? Where is wealth for the unlearned? Where is peace for the restless?"},{"s":"त्यजेत् धर्मं दयाहीनं विद्यां मानविवर्जिताम्","src":"चाणक्य नीति","h":"दया रहित धर्म और अभिमानयुक्त विद्या — दोनों को त्याग दो।","e":"Abandon dharma devoid of compassion and knowledge tainted with pride."},{"s":"नास्ति मेधाविनो दुःखं नास्ति विद्वज्जने शमः","src":"चाणक्य नीति","h":"बुद्धिमान को दुख नहीं और विद्वान को अशांति नहीं।","e":"The intelligent have no sorrow; the learned have no unrest."},{"s":"शक्तिः परा शत्रुदमने ज्ञानं परं धनम्","src":"अर्थशास्त्र — कौटिल्य","h":"शत्रु को वश में करना सर्वोच्च शक्ति है और ज्ञान सर्वोच्च धन।","e":"Subduing the enemy is supreme power; knowledge is supreme wealth."},{"s":"राजधर्मश्च अर्थधर्मश्च संयुक्तो यत्र वर्तते","src":"अर्थशास्त्र — कौटिल्य","h":"जहाँ राजधर्म और अर्थधर्म मिलकर चलते हैं — वहाँ समृद्धि होती है।","e":"Where royal duty and economic duty work together — there prosperity dwells."},{"s":"प्रजासुखे सुखं राज्ञः प्रजानां च हिते हितम्","src":"अर्थशास्त्र — कौटिल्य","h":"प्रजा के सुख में राजा का सुख है, प्रजा के हित में उसका हित।","e":"In the happiness of his people lies the king's happiness; in their welfare, his welfare."},{"s":"स्वदेशे पूज्यते राजा विद्वान् सर्वत्र पूज्यते","src":"चाणक्य नीति","h":"राजा अपने देश में पूजा जाता है — विद्वान सर्वत्र पूजा जाता है।","e":"A king is honored in his own land; a learned person is honored everywhere."},{"s":"संसारविषवृक्षस्य द्वे फले अमृतोपमे","src":"चाणक्य नीति","h":"संसार के विष वृक्ष के दो अमृत जैसे फल हैं — सज्जनों का संग और मधुर वाणी।","e":"The poison tree of the world bears two nectar-like fruits — company of the noble and sweet speech."},{"s":"कर्ज शत्रुश्च व्याधिश्च पुनः पुनरुपेक्षितः","src":"चाणक्य नीति","h":"ऋण, शत्रु और रोग — बार-बार उपेक्षित करने पर बढ़ते हैं।","e":"Debt, an enemy and a disease — if repeatedly ignored, they grow."},{"s":"अनेकसंशयोच्छेदी परोक्षार्थस्य दर्शकम्","src":"अर्थशास्त्र — कौटिल्य","h":"अनेक संदेहों को काटने वाला और परोक्ष अर्थ को दिखाने वाला शास्त्र है।","e":"Scripture is that which cuts through doubts and illuminates hidden truths."},{"s":"वृद्धसेवी भवेद् विद्वान्","src":"चाणक्य नीति","h":"वृद्धों की सेवा करने वाला विद्वान बनता है।","e":"One who serves the elderly becomes wise."},{"s":"विश्वासः सर्वसिद्धिमूलम्","src":"चाणक्य नीति","h":"विश्वास सब सिद्धियों का मूल है।","e":"Trust is the root of all accomplishments."},{"s":"जगत् स्वप्नाभं भ्रान्तिमात्रम्","src":"योगवासिष्ठ","h":"यह जगत स्वप्न जैसा है — केवल भ्रम है।","e":"This world is like a dream — mere illusion."},{"s":"मनो हि हेतुर्बन्धाय मोक्षाय च उदाहृतम्","src":"योगवासिष्ठ","h":"मन ही बंधन का और मोक्ष का कारण कहा गया है।","e":"The mind is said to be the cause of both bondage and liberation."},{"s":"सर्गौ स्थितिप्रलयकारणमीश्वरस्य","src":"योगवासिष्ठ","h":"ईश्वर ही सृष्टि, स्थिति और लय का कारण है।","e":"The Lord is the cause of creation, preservation and dissolution."},{"s":"ब्रह्म सत्यं जगन्मिथ्या जीवो ब्रह्मैव नापरः","src":"विवेकचूडामणि — शंकराचार्य","h":"ब्रह्म सत्य है, जगत मिथ्या है और जीव ब्रह्म ही है, अन्य कुछ नहीं।","e":"Brahman is real, the world is illusory, and the individual soul is none other than Brahman."},{"s":"मोक्षस्य हेतुः प्रथमो निगद्यते","src":"विवेकचूडामणि","h":"मोक्ष का पहला कारण — मुमुक्षुत्व कहा जाता है।","e":"The first cause of liberation is said to be the burning desire for freedom."},{"s":"श्रोत्रियं ब्रह्मनिष्ठं गुरुम् उपसंपद्येत","src":"मुण्डकोपनिषद् १.२.१२","h":"श्रोत्रिय और ब्रह्मनिष्ठ गुरु के पास जाओ।","e":"Seek a teacher learned in the scriptures and established in Brahman."},{"s":"या निशा सर्वभूतानां तस्यां जागर्ति संयमी","src":"भगवद् गीता २.६९","h":"जो सब भूतों के लिए रात है, उसमें संयमी जागता है।","e":"What is night for all beings, in that the self-controlled person is awake."},{"s":"भोगे रोगभयं कुले च्युतिभयं वित्ते नृपालाद् भयम्","src":"भर्तृहरि — वैराग्यशतकम्","h":"भोग में रोग का डर, कुल में पतन का, धन में राजा का, मान में दरिद्रता का — सब जगह भय है।","e":"In pleasure there is fear of disease; in family, fear of decline — indeed, everything is pervaded by fear."},{"s":"तृष्णे जृम्भसि पापकारिणि","src":"भर्तृहरि — वैराग्यशतकम्","h":"हे पापकारी तृष्णा, तू क्यों बढ़ती है?","e":"O sinful desire, why do you expand?"},{"s":"यान्ति न्यायप्रवृत्तस्य तिर्यञ्चोऽपि सहायताम्","src":"पञ्चतन्त्र","h":"न्यायपूर्वक चलने वाले की पशु-पक्षी भी सहायता करते हैं।","e":"Even animals help one who walks the path of justice."},{"s":"संतोषस्त्रिषु कर्तव्यः स्वदारे भोजने धने","src":"चाणक्य नीति","h":"तीन चीजों में संतोष रखना चाहिए — अपनी पत्नी, भोजन और धन।","e":"Contentment should be practiced in three things — one's wife, food and wealth."},{"s":"असंतोषस्त्रिषु कर्तव्यः स्वाध्याये जपदानयोः","src":"चाणक्य नीति","h":"तीन में असंतोष रखो — स्वाध्याय, जप और दान।","e":"Never be satisfied with three things — self-study, meditation and charity."},{"s":"इन्द्रियाणां हि चरतां यन्मनोऽनुविधीयते","src":"भगवद् गीता २.६७","h":"जो मन विचरती इन्द्रियों के पीछे चल देता है — वह बुद्धि हर लेता है।","e":"The mind that follows the wandering senses carries away wisdom."},{"s":"विश्रम्य विश्रम्य तमेव धीमान् कृतोद्यमः प्राप्नुयात्","src":"भगवद् गीता ६.२४","h":"बार-बार विश्राम करके भी धीर पुरुष उसे प्राप्त करता है।","e":"Resting again and again, the wise and diligent person attains it."},{"s":"नमस्ते सते सर्वभूताधिवासाय","src":"भगवद् गीता ११.३८","h":"सब भूतों में वास करने वाले को मेरा नमस्कार।","e":"Salutations to you who dwell in all beings."},{"s":"तपाम्यहमहं वर्षं निगृह्णाम्युत्सृजामि च","src":"भगवद् गीता ९.१९","h":"मैं तपाता हूँ, मैं वर्षा रोकता और छोड़ता हूँ।","e":"I give heat; I withhold and send the rain."},{"s":"पत्रं पुष्पं फलं तोयं यो मे भक्त्या प्रयच्छति","src":"भगवद् गीता ९.२६","h":"जो पत्ता, फूल, फल या जल भक्ति से अर्पण करता है — वह मुझे स्वीकार है।","e":"Whoever offers me a leaf, flower, fruit or water with devotion — I accept it."},{"s":"मोघाशा मोघकर्माणो मोघज्ञाना विचेतसः","src":"भगवद् गीता ९.१२","h":"जो मुझे मानव देह में नहीं मानते — उनकी आशा, कर्म और ज्ञान निष्फल हैं।","e":"Those who do not recognize me in human form — their hopes, deeds and knowledge are vain."},{"s":"महात्मानस्तु मां पार्थ दैवीं प्रकृतिमाश्रिताः","src":"भगवद् गीता ९.१३","h":"महात्मा दैवी प्रकृति के आश्रय से मुझे सदा भजते हैं।","e":"Great souls, sheltered in divine nature, worship me with undivided attention."},{"s":"यो वेद निहितं गुहायां परमे व्योमन्","src":"कठोपनिषद् १.२.१२","h":"जो परम आकाश की गुफा में छिपे को जानता है — वह सब कुछ पाता है।","e":"One who knows what is hidden in the cave of the highest ether — obtains all."},{"s":"इन्द्रियेभ्यः परा ह्यर्था अर्थेभ्यश्च परं मनः","src":"कठोपनिषद् १.३.१०","h":"इन्द्रियों से परे विषय हैं, विषयों से परे मन है, मन से परे बुद्धि और बुद्धि से परे महान आत्मा।","e":"Beyond the senses are objects; beyond objects is mind; beyond mind is intellect; beyond intellect is the great Self."},{"s":"न जायते म्रियते वा विपश्चित्","src":"कठोपनिषद् १.२.१८","h":"बुद्धिमान आत्मा न जन्म लेती है न मरती है।","e":"The wise Self is not born and does not die."},{"s":"अकर मुதல எழுत்தெல்லாம் आदि भगवान् முதற्றே உலகு","src":"तिरुक्कुरल् — १","h":"जैसे 'अ' सब अक्षरों का आधार है — वैसे ईश्वर इस जगत का आधार है।","e":"As the letter A is the beginning of all letters, so the Lord is the beginning of the world."},{"s":"कற்க கசடற கற்பவை कत्वा सारं जगत् अनु","src":"तिरुक्कुरल् — ३९१","h":"जो सीखना हो उसे अच्छी तरह सीखो — फिर उस ज्ञान के अनुसार चलो।","e":"Learn thoroughly what should be learned — then live accordingly."},{"s":"योगश्चित्तवृत्तिनिरोधः","src":"पातञ्जल योगसूत्र १.२","h":"चित्त की वृत्तियों का निरोध ही योग है।","e":"Yoga is the cessation of the movements of the mind."},{"s":"तदा द्रष्टुः स्वरूपेऽवस्थानम्","src":"पातञ्जल योगसूत्र १.३","h":"तब द्रष्टा अपने स्वरूप में स्थित हो जाता है।","e":"Then the seer rests in its own true nature."},{"s":"वृत्तिसारूप्यमितरत्र","src":"पातञ्जल योगसूत्र १.४","h":"अन्य समय में द्रष्टा चित्त की वृत्तियों के साथ तादात्म्य करता है।","e":"At other times, the seer identifies with the modifications of the mind."},{"s":"अभ्यासवैराग्याभ्यां तन्निरोधः","src":"पातञ्जल योगसूत्र १.१२","h":"अभ्यास और वैराग्य से उन वृत्तियों का निरोध होता है।","e":"Their restraint comes through practice and non-attachment."},{"s":"हेयं दुःखमनागतम्","src":"पातञ्जल योगसूत्र २.१६","h":"आने वाले दुख को टालना है।","e":"The suffering that is yet to come is to be avoided."},{"s":"असिताचलसमाना मेरुशृङ्गनिभा","src":"शिव महिम्न स्तोत्र","h":"महादेव की महिमा अचल पर्वत जैसी और मेरु शिखर जैसी ऊँची है।","e":"The glory of Shiva is as immovable as a great mountain and as high as Meru's peak."},{"s":"त्रयी साङ्ख्यं योगः पशुपतिमतं वैष्णवमिति","src":"शिव महिम्न स्तोत्र","h":"तीन वेद, सांख्य, योग, शैव और वैष्णव — सब अलग-अलग मार्गों से तुझ तक पहुँचते हैं।","e":"The Vedas, Sankhya, Yoga, Shaivism, Vaishnavism — all paths lead to you alone."},{"s":"सा तु अस्मिन् परमप्रेमरूपा","src":"नारद भक्ति सूत्र","h":"भक्ति परमेश्वर में परम प्रेम के रूप में है।","e":"Bhakti is the highest love towards the Supreme."},{"s":"अमृतस्वरूपा च","src":"नारद भक्ति सूत्र","h":"और वह अमृत स्वरूप है।","e":"And it is of the nature of nectar."},{"s":"सर्वं विष्णुमयं जगत्","src":"विष्णु सहस्रनाम","h":"यह समस्त जगत विष्णुमय है।","e":"The entire universe is pervaded by Vishnu."},{"s":"न जातु कामः कामानामुपभोगेन शाम्यति","src":"महाभारत — आदिपर्व","h":"कामनाएँ भोग से कभी शांत नहीं होतीं।","e":"Desires are never extinguished by the enjoyment of desired objects."},{"s":"मनसो हि प्रसादेन हन्ति पापं पुरातनम्","src":"महाभारत — शान्तिपर्व","h":"मन की प्रसन्नता से पुराने पाप नष्ट होते हैं।","e":"Through peace of mind, ancient sins are destroyed."},{"s":"सहसा विदधीत न क्रियाम्","src":"महाभारत — उद्योगपर्व","h":"कोई भी कार्य जल्दबाजी में नहीं करना चाहिए।","e":"Do not act rashly; think before you act."},{"s":"अनागतविधाता च प्रत्युत्पन्नमतिस्तथा","src":"महाभारत — पञ्चतन्त्र","h":"भविष्य को पहले से सोचने वाला और वर्तमान में बुद्धि रखने वाला — जीतता है।","e":"One who plans ahead and who is alert in the present — triumphs."},{"s":"धर्मो रक्षति रक्षितः","src":"महाभारत — वनपर्व","h":"रक्षित धर्म ही रक्षा करता है।","e":"Dharma when protected, protects in return."},{"s":"आत्मनः प्रतिकूलानि परेषां न समाचरेत्","src":"महाभारत — अनुशासनपर्व","h":"जो अपने लिए प्रतिकूल लगे — दूसरों के साथ वैसा मत करो।","e":"Do not do unto others what you would not want done to yourself."},{"s":"एकवृक्षं न कुर्वन्ति अरण्यं बहवोऽपि वृक्षाः","src":"महाभारत — शान्तिपर्व","h":"एक वृक्ष से जंगल नहीं बनता — अनेक से बनता है।","e":"Many trees make a forest — not a single tree."},{"s":"अभ्युदयः सन्मार्गस्थितं प्राप्नोति","src":"महाभारत — उद्योगपर्व","h":"सन्मार्ग पर चलने वाले को ही उन्नति मिलती है।","e":"Prosperity comes only to one who walks the righteous path."},{"s":"या देवी सर्वभूतेषु चेतनेत्यभिधीयते","src":"देवी महात्म्यम्","h":"जो देवी सब भूतों में चेतना के रूप में हैं — उन्हें नमस्कार।","e":"Salutations to the Goddess who exists in all beings as consciousness."},{"s":"सर्वमङ्गलमाङ्गल्ये शिवे सर्वार्थसाधिके","src":"देवी महात्म्यम्","h":"सब मंगलों की मंगलदायिनी, शिवा, सब अर्थों को सिद्ध करने वाली को नमन।","e":"Salutations to her who is auspiciousness of all auspicious, who fulfills all goals."},{"s":"धर्मः प्रोज्झितकैतवोऽत्र","src":"भागवत पुराण १.१.२","h":"यहाँ केवल निष्कपट धर्म का निरूपण है।","e":"Here dharma free from all deception is expounded."},{"s":"जीवस्य तत्त्वजिज्ञासा नार्थो यश्चेह कर्मभिः","src":"भागवत पुराण १.२.१०","h":"जीव का उद्देश्य तत्त्वज्ञान की जिज्ञासा है — कर्मफल नहीं।","e":"The purpose of life is inquiry into truth — not the fruits of action."},{"s":"एतावान् साङ्ख्ययोगाभ्यां स्वधर्मपरिनिष्ठया","src":"भागवत पुराण १.२.१३","h":"सांख्य, योग और स्वधर्म का परम उद्देश्य यही है।","e":"This is the supreme aim of Sankhya, Yoga and one's own dharma."},{"s":"अतिथि देवो भव","src":"तैत्तिरीयोपनिषद्","h":"अतिथि देवता है।","e":"The guest is God."},{"s":"लोका समस्ता सुखिनो भवन्तु","src":"वैदिक प्रार्थना","h":"सब लोक सुखी हों।","e":"May all worlds be happy."},{"s":"ओम् नमः शिवाय","src":"शिव पञ्चाक्षरी","h":"शिव को नमस्कार।","e":"Salutations to Shiva."},{"s":"त्वमेव माता च पिता त्वमेव","src":"वैदिक प्रार्थना","h":"तू ही माता है और तू ही पिता — तू ही बन्धु और सखा है।","e":"You alone are mother and father; you alone are kinsman and friend."},{"s":"ॐ भूर्भुवः स्वः तत्सवितुर्वरेण्यम्","src":"गायत्री मन्त्र — ऋग्वेद","h":"उस सृष्टिकर्ता के श्रेष्ठ तेज का हम ध्यान करते हैं — वह हमारी बुद्धि को प्रेरित करे।","e":"We meditate on the glory of the Creator — may he enlighten our intellect."},{"s":"सहनाववतु सह नौ भुनक्तु","src":"तैत्तिरीयोपनिषद् — शान्तिपाठ","h":"वह हम दोनों की रक्षा करे, हम दोनों को पोषण दे — हम साथ पराक्रम करें।","e":"May he protect us both; may he nourish us both — may we work together with vigor."},{"s":"कालः सृजति भूतानि कालः संहरते पुनः","src":"अथर्ववेद","h":"काल ही प्राणियों को उत्पन्न करता है और काल ही उन्हें नष्ट करता है।","e":"Time creates all beings; Time destroys them again."},{"s":"अयं निजः परो वेति गणना लघुचेतसाम्","src":"महोपनिषद् ६.७२","h":"यह मेरा है, यह पराया है — ऐसी गणना छोटे मन वालों की है। उदारचरित के लिए सारी पृथ्वी परिवार है।","e":"This is mine, that is another's — such distinction belongs to small minds. For the noble, the whole world is one family."},{"s":"वसुधैव कुटुम्बकम्","src":"महोपनिषद् ६.७२","h":"सारी पृथ्वी एक परिवार है।","e":"The whole world is one family."},{"s":"अहिंसा सत्यमस्तेयं शौचमिन्द्रियनिग्रहः","src":"मनुस्मृति","h":"अहिंसा, सत्य, अस्तेय, शुचिता और इन्द्रिय-निग्रह — ये सब धर्मों का सार है।","e":"Non-violence, truth, non-stealing, purity and sense-restraint — these are the essence of all dharmas."},{"s":"सत्यं ब्रूयात् प्रियं ब्रूयात् न ब्रूयात् सत्यमप्रियम्","src":"मनुस्मृति","h":"सत्य बोलो, प्रिय बोलो — पर अप्रिय सत्य न बोलो।","e":"Speak the truth; speak pleasantly — but do not speak unpleasant truth."},{"s":"आ नो भद्राः क्रतवो यन्तु विश्वतः","src":"ऋग्वेद १.८९.१","h":"सभी दिशाओं से शुभ विचार हमारे पास आएँ।","e":"Let noble thoughts come to us from all directions."},{"s":"एकं सद् विप्रा बहुधा वदन्ति","src":"ऋग्वेद १.१६४.४६","h":"सत्य एक ही है — विद्वान उसे अनेक नामों से पुकारते हैं।","e":"Truth is one; the wise call it by many names."},{"s":"तेन त्यक्तेन भुञ्जीथाः","src":"ऋग्वेद / ईशावास्य","h":"त्याग द्वारा भोगो — लोभ मत करो।","e":"Enjoy through renunciation — do not covet."},{"s":"जाकी रही भावना जैसी प्रभु मूरत देखी तिन तैसी","src":"रामचरितमानस — तुलसीदास","h":"जिसकी जैसी भावना थी, उसने प्रभु का रूप वैसा ही देखा।","e":"As was one's devotion, so appeared the Lord to each."},{"s":"सिया राम मय सब जग जानी करउँ प्रनाम जोरि जुग पानी","src":"रामचरितमानस — तुलसीदास","h":"सीता-राम से भरे इस जगत को जानकर मैं हाथ जोड़कर नमस्कार करता हूँ।","e":"Knowing this world to be filled with Sita and Rama, I bow with joined palms."},{"s":"राम नाम मणि दीप धरु जीह देहरी द्वार","src":"रामचरितमानस — कबीर","h":"राम नाम रूपी रत्न दीप को जीभ की देहरी पर रखो।","e":"Place the jewel-lamp of Ram's name on the threshold of your tongue."},{"s":"न विनायकमृते सिद्धिः","src":"वाल्मीकि रामायण — सुन्दरकाण्ड","h":"विनायक के बिना कोई सिद्धि नहीं।","e":"Without Vinayaka, no task is accomplished."},{"s":"हनुमन्तं विदित्वा हि सर्वान् कामान् प्रयच्छति","src":"वाल्मीकि रामायण","h":"हनुमान को जानने से सब इच्छाएँ पूर्ण होती हैं।","e":"Knowing Hanuman, all desires are fulfilled."},{"s":"क्षणशः कणशश्चैव विद्यामर्थं च साधयेत्","src":"चाणक्य नीति","h":"पल-पल करके विद्या और कण-कण करके धन संग्रह करो।","e":"Accumulate knowledge moment by moment, and wealth grain by grain."},{"s":"नाभिषेको न संस्कारः सिंहस्य क्रियते मृगैः","src":"चाणक्य नीति","h":"सिंह का राज्याभिषेक पशु नहीं करते — वह स्वयं पराक्रम से राजा बनता है।","e":"The lion's coronation is not performed by lesser animals — he earns his kingship through valor."},{"s":"तुष्टिरेव परं सुखम्","src":"चाणक्य नीति","h":"संतोष ही परम सुख है।","e":"Contentment is the highest happiness."},{"s":"अर्थस्य पुरुषो दासः","src":"महाभारत","h":"मनुष्य धन का दास है — पर धन किसी का दास नहीं।","e":"Man is a slave to wealth; wealth is a slave to none."},{"s":"सत्संगत्वे निःसंगत्वं निःसंगत्वे निर्मोहत्वम्","src":"भज गोविन्दम् — शंकराचार्य","h":"सत्संग से वैराग्य, वैराग्य से मोहरहितता और फिर मुक्ति।","e":"From good company comes detachment; from detachment, freedom from delusion — and then liberation."},{"s":"भज गोविन्दं भज गोविन्दं गोविन्दं भज मूढमते","src":"भज गोविन्दम् — शंकराचार्य","h":"गोविंद का भजन करो, गोविंद का भजन करो — हे मूढ़ मन।","e":"Worship Govinda, worship Govinda — O foolish mind."},{"s":"पुनरपि जननं पुनरपि मरणं","src":"भज गोविन्दम् — शंकराचार्य","h":"बार-बार जन्म, बार-बार मृत्यु — इस संसार-सागर से पार करो प्रभु।","e":"Again birth, again death — O Lord, carry me across this ocean of existence."},{"s":"काते न करसि यत्नं मुञ्चाध्यासमज्ञानम्","src":"भज गोविन्दम्","h":"क्यों नहीं करते प्रयत्न — अज्ञान और भ्रम को छोड़ो।","e":"Why don't you make the effort — abandon delusion and ignorance."},{"s":"सुखतः क्रियते रामाभोगः पश्चाद्धन्त शरीरे रोगः","src":"भज गोविन्दम्","h":"सुख से भोग किया जाता है — पर बाद में शरीर में रोग आता है।","e":"Pleasure is enjoyed freely — but the body suffers disease later."},{"s":"यावद्वित्तोपार्जनसक्तः तावन्निजपरिवारो रक्तः","src":"भज गोविन्दम्","h":"जब तक धन कमाते हो तब तक परिवार का प्रेम है।","e":"As long as you earn wealth, so long does family show affection."},{"s":"स्वल्पमप्यस्य धर्मस्य त्रायते महतो भयात्","src":"भगवद् गीता २.४०","h":"इस धर्म का थोड़ा भी अनुष्ठान महान भय से रक्षा करता है।","e":"Even a little of this dharma saves one from great fear."},{"s":"व्यवसायात्मिका बुद्धिरेकेह कुरुनन्दन","src":"भगवद् गीता २.४१","h":"इस मार्ग में निश्चयात्मिका बुद्धि एक ही है।","e":"In this path, the resolute intelligence is single-pointed."},{"s":"त्रैगुण्यविषया वेदा निस्त्रैगुण्यो भवार्जुन","src":"भगवद् गीता २.४५","h":"वेद त्रिगुण विषयक हैं — तू त्रिगुण से परे हो जा।","e":"The Vedas deal with the three qualities — rise beyond them, Arjuna."},{"s":"यावानर्थ उदपाने सर्वतः सम्प्लुतोदके","src":"भगवद् गीता २.४६","h":"जैसे बाढ़ में सब कुँए व्यर्थ हो जाते हैं — ब्रह्मज्ञानी के लिए सब वेद वैसे।","e":"As much use as a well when there is flood everywhere — so are the Vedas to the knower of Brahman."},{"s":"नैव किञ्चित्करोमीति युक्तो मन्येत तत्त्ववित्","src":"भगवद् गीता ५.८","h":"तत्त्वज्ञ यह माने कि मैं कुछ नहीं करता।","e":"The knower of truth thinks: I do nothing at all."},{"s":"ब्रह्मण्याधाय कर्माणि सङ्गं त्यक्त्वा","src":"भगवद् गीता ५.१०","h":"कर्म ब्रह्म को अर्पण करके आसक्ति छोड़कर करो।","e":"Offering all actions to Brahman, free from attachment — act."},
+{"s":"अपि स्वर्णमयी लङ्का न मे लक्ष्मण रोचते","src":"वाल्मीकि रामायण — युद्धकाण्ड","h":"हे लक्ष्मण, सोने की लंका भी मुझे नहीं भाती — जननी और जन्मभूमि स्वर्ग से भी बढ़कर है।","e":"Even golden Lanka does not please me, O Lakshmana — mother and motherland are greater than heaven."},
+{"s":"तपः परं कृतयुगे त्रेतायां ज्ञानमुच्यते","src":"महाभारत — शान्तिपर्व","h":"सत्ययुग में तप श्रेष्ठ है, त्रेता में ज्ञान, द्वापर में यज्ञ और कलियुग में दान।","e":"In Satya Yuga, austerity is supreme; in Treta, knowledge; in Dvapara, sacrifice; in Kali, charity."},
+{"s":"क्षणे क्षणे यन्नवतामुपैति तदेव रूपं रमणीयतायाः","src":"कालिदास — मेघदूतम्","h":"जो हर पल नया हो, वही सौंदर्य है।","e":"That which becomes new in every moment — that alone is beauty."},
+{"s":"मातृ देवो भव पितृ देवो भव आचार्य देवो भव","src":"तैत्तिरीयोपनिषद् १.११","h":"माँ देवता है, पिता देवता है, गुरु देवता है।","e":"The mother is God, the father is God, the teacher is God."},
+{"s":"शनैः पन्थाः शनैः कन्था शनैः पर्वतलङ्घनम्","src":"चाणक्य नीति","h":"धीरे-धीरे रास्ता, धीरे-धीरे कंबल बुना जाता है, धीरे-धीरे पर्वत पार होता है।","e":"Step by step the path; stitch by stitch the blanket; slowly the mountain is crossed."},
+{"s":"यस्मिन् जीवति जीवन्ति बहवः सो जीवति","src":"महाभारत — वनपर्व","h":"जिसके जीने से अनेक जीते हैं — वही जीता है।","e":"One whose living gives life to others — that one truly lives."},
+{"s":"उदीयते नास्तमयात् पुनः सूर्यः","src":"वाल्मीकि रामायण — किष्किन्धाकाण्ड","h":"डूबा हुआ सूर्य फिर उगता है — पतन के बाद उत्थान अवश्य है।","e":"The sun that sets rises again — after every fall, a rise is certain."},
+{"s":"आत्मानं रथिनं विद्धि शरीरं रथमेव च","src":"कठोपनिषद् १.३.३","h":"आत्मा रथी है, शरीर रथ है, बुद्धि सारथी है और मन लगाम है।","e":"Know the Self as the rider, the body as the chariot, intellect as the charioteer, mind as the reins."},
+{"s":"इन्द्रियाणि पराण्याहुरिन्द्रियेभ्यः परं मनः","src":"भगवद् गीता ३.४२","h":"इन्द्रियाँ श्रेष्ठ हैं, मन इन्द्रियों से, बुद्धि मन से और आत्मा बुद्धि से परे है।","e":"The senses are superior, mind is above the senses, intelligence above the mind, and the Self above intelligence."},
+{"s":"व्यायामाच्च लभते स्वास्थ्यं दीर्घायुष्यं बलं सुखम्","src":"महाभारत — वनपर्व","h":"व्यायाम से स्वास्थ्य, लंबी उम्र, बल और सुख मिलता है।","e":"From exercise comes health, long life, strength and happiness."},
+{"s":"काकस्य वचनं चित्रं काकस्य चरितं विचित्रम्","src":"हितोपदेश","h":"कौए का वचन अजीब है, उसका आचरण और भी अजीब — हर कोई अपने स्वभाव से चलता है।","e":"Strange is the crow's speech, stranger still its conduct — each follows its own nature."},
+{"s":"सर्वेषामपि वस्तूनां भावः प्रमाणं","src":"न्यायदर्शन","h":"सभी वस्तुओं का सत्य उनकी अनुभूति में है।","e":"The truth of all things lies in their direct experience."},
+{"s":"क्षणं चित्तम् क्षणं वित्तम् क्षणं जीवितम् एव च","src":"महाभारत — उद्योगपर्व","h":"मन, धन और जीवन — ये सब क्षणिक हैं। फिर भी मनुष्य मोहवश बड़े-बड़े पाप करता है।","e":"Mind, wealth and life — all are momentary. Yet in delusion, great sins are committed."},
+{"s":"अनुद्वेगकरं वाक्यं सत्यं प्रियहितं च यत्","src":"भगवद् गीता १७.१५","h":"जो वाणी उद्वेग न करे, सत्य हो, प्रिय हो और हितकर हो — वही वाक् तप है।","e":"Speech that causes no agitation, is truthful, pleasant and beneficial — that is the austerity of speech."},
+{"s":"जो दूसरे को नहीं सहारा देता वह भी कहीं न कहीं सहारे की प्रतीक्षा करता है","src":"पञ्चतन्त्र","h":"जो दूसरों का सहारा नहीं बनता, वह स्वयं भी कभी-न-कभी सहारे की प्रतीक्षा करता है।","e":"One who never supports others will one day await support themselves."},
+{"s":"नहि सुप्तस्य सिंहस्य प्रविशन्ति मुखे मृगाः","src":"हितोपदेश","h":"सोते हुए सिंह के मुँह में हिरन स्वयं नहीं आते — पुरुषार्थ चाहिए।","e":"Deer do not enter the mouth of a sleeping lion — effort is needed."},
+{"s":"सुखार्थिनः कुतो विद्या नास्ति विद्यार्थिनः सुखम्","src":"चाणक्य नीति","h":"सुख चाहने वाले को विद्या कहाँ? और विद्यार्थी को सुख कहाँ?","e":"Where is learning for one who seeks comfort? Where is comfort for one who seeks learning?"},
+{"s":"पृथिव्यां त्रीणि रत्नानि जलमन्नं सुभाषितम्","src":"चाणक्य नीति","h":"पृथ्वी पर तीन रत्न हैं — जल, अन्न और सुभाषित (अच्छी वाणी)।","e":"The earth has three jewels — water, food, and wise words."},
+{"s":"गुणाः पूजास्थानं गुणिषु न च लिङ्गं न च वयः","src":"महाभारत — उद्योगपर्व","h":"गुणवान की पूजा गुणों के कारण होती है, न लिंग के कारण, न आयु के कारण।","e":"The virtuous are honored for their virtues, not for gender or age."},
+{"s":"अव्यक्तादीनि भूतानि व्यक्तमध्यानि भारत","src":"भगवद् गीता २.२८","h":"प्राणी अव्यक्त से उत्पन्न होते हैं, मध्य में व्यक्त होते हैं और अंत में अव्यक्त हो जाते हैं।","e":"Beings emerge from the unmanifest, are manifest in the middle, and return to the unmanifest."},
+{"s":"नित्यं सन्निहितो मृत्युः कर्तव्यं धर्ममाचरेत्","src":"महाभारत — वनपर्व","h":"मृत्यु सदा पास है — इसलिए धर्म का आचरण करते रहो।","e":"Death is ever close — therefore always act in accordance with dharma."},
+{"s":"मन्त्रहीनं क्रियाहीनं भक्तिहीनं सुरेश्वर","src":"शिव स्तुति","h":"जो मंत्रहीन, क्रियाहीन और भक्तिहीन है — हे ईश्वर, उसे भी स्वीकार करो।","e":"O Lord, even one who is without mantra, rite or devotion — please accept them too."},
+{"s":"यावन्निरोगं शरीरं यावन्मृत्युश्च दूरतः","src":"भर्तृहरि — वैराग्यशतकम्","h":"जब तक शरीर निरोग है और मृत्यु दूर है — तब तक धर्म का संचय करो।","e":"While the body is healthy and death is far — accumulate dharma."},
+{"s":"शान्तिः परं सुखम्","src":"महाभारत — शान्तिपर्व","h":"शांति ही परम सुख है।","e":"Peace is the highest happiness."},
+{"s":"यदृच्छालाभसन्तुष्टो द्वन्द्वातीतो विमत्सरः","src":"भगवद् गीता ४.२२","h":"जो मिले उसमें संतुष्ट, द्वंद्व से परे और ईर्ष्यारहित — वह कर्म करके भी बंधता नहीं।","e":"Content with whatever comes, beyond opposites, free of envy — such a one is not bound even while acting."},
+{"s":"निर्द्वन्द्वो हि महाबाहो सुखं बन्धात्प्रमुच्यते","src":"भगवद् गीता ५.३","h":"हे महाबाहु, द्वंद्व रहित व्यक्ति सहज ही बंधन से मुक्त हो जाता है।","e":"O mighty-armed one, one free of opposites is easily liberated from all bonds."},
+{"s":"परस्परं भावयन्तः श्रेयः परमवाप्स्यथ","src":"भगवद् गीता ३.११","h":"एक दूसरे का पोषण करते हुए परम कल्याण को प्राप्त होओगे।","e":"Nourishing one another, you will attain the highest good."},
+{"s":"न हि देहभृता शक्यं त्यक्तुं कर्माण्यशेषतः","src":"भगवद् गीता १८.११","h":"देहधारी के लिए कर्म का पूर्णतः त्याग संभव नहीं — पर फल का त्याग संभव है।","e":"It is impossible for an embodied being to give up action entirely — but renunciation of fruits is possible."},
+{"s":"एष धर्मः सनातनः","src":"महाभारत — वनपर्व","h":"यही सनातन धर्म है — अहिंसा, सत्य और सभी प्राणियों पर करुणा।","e":"This is the eternal dharma — non-violence, truth, and compassion for all beings."}];
+
+// ════════════════════════════════════════════
+// LANGUAGE DATA
+// ════════════════════════════════════════════
+const LANGS={
+  sa:{n:'संस्कृतम्',e:'Sanskrit',f:'Tiro Devanagari Sanskrit',sub:'पवित्र आयुष घटिका',dobD:'जन्म-दिनाङ्कः',dobS:'जन्म तिथि',ageD:'अपेक्षित आयुः (वर्षाणि)',ageS:'Expected Age',bpmD:'हृदयस्पन्दनम्',bpmS:'BPM',note:'रिक्तं — वयसानुसारं',purna:'पूर्णायुः १००',begin:'▶ आरम्भ',chg:'भाषां परिवर्तयतु',lr:'शेष हृदयस्पन्दनम्',ul:'प्राण · हृदयस्पन्दनानि',birth:'जन्म',moksha:'मोक्षः',bl:'हृदयगतिः',ash:[{d:'ब्रह्मचर्यम्',t:'Brahmacharya',p:'प्रथम आश्रमः'},{d:'गृहस्थाश्रमः',t:'Grihastha',p:'द्वितीयः'},{d:'वानप्रस्थः',t:'Vanaprastha',p:'तृतीयः'},{d:'संन्यासः',t:'Sannyasa',p:'चतुर्थः'}],pn:['ब्रह्मचर्यम्','गृहस्थः','वानप्रस्थः','संन्यासः'],ed:'जन्म-दिनाङ्कं प्रविशतु।',ea:'१–१५० वर्षाणि।',ef:'भविष्यत्काले न।',eo:'आयुः वयसः अधिकम्।'},
+  hi:{n:'हिन्दी',e:'Hindi',f:'Noto Serif Devanagari',sub:'पवित्र आयुष घड़ी',dobD:'जन्म तिथि',dobS:'Date of Birth',ageD:'अपेक्षित आयु (वर्ष)',ageS:'Lifespan',bpmD:'हृदयगति',bpmS:'BPM',note:'खाली — उम्र से स्वतः',purna:'पूर्ण आयुष १००',begin:'▶ आरंभ करें',chg:'भाषा बदलें',lr:'शेष हृदयस्पंदन',ul:'प्राण · शेष धड़कनें',birth:'जन्म',moksha:'मोक्ष',bl:'धड़कन/मिनट',ash:[{d:'ब्रह्मचर्य',t:'विद्यार्थी काल',p:'प्रथम आश्रम'},{d:'गृहस्थ',t:'गृहस्थ जीवन',p:'द्वितीय आश्रम'},{d:'वानप्रस्थ',t:'वन गमन',p:'तृतीय आश्रम'},{d:'संन्यास',t:'त्याग और मोक्ष',p:'चतुर्थ आश्रम'}],pn:['ब्रह्मचर्य','गृहस्थ','वानप्रस्थ','संन्यास'],ed:'जन्म तिथि दर्ज करें।',ea:'१–१५० वर्ष।',ef:'जन्म भविष्य में नहीं।',eo:'आयु उम्र से अधिक हो।'},
+  mr:{n:'मराठी',e:'Marathi',f:'Noto Serif Devanagari',sub:'पवित्र आयुष घड्याळ',dobD:'जन्म तारीख',dobS:'Date of Birth',ageD:'अपेक्षित वय (वर्षे)',ageS:'Lifespan',bpmD:'हृदयगती',bpmS:'BPM',note:'रिकामे — वयानुसार',purna:'पूर्ण आयुष १००',begin:'▶ सुरू करा',chg:'भाषा बदला',lr:'उरलेले हृदयस्पंदन',ul:'प्राण · उरलेले ठोके',birth:'जन्म',moksha:'मोक्ष',bl:'ठोके/मिनिट',ash:[{d:'ब्रह्मचर्य',t:'विद्यार्थी',p:'पहिला'},{d:'गृहस्थ',t:'गृहस्थ',p:'दुसरा'},{d:'वानप्रस्थ',t:'वन',p:'तिसरा'},{d:'संन्यास',t:'त्याग',p:'चौथा'}],pn:['ब्रह्मचर्य','गृहस्थ','वानप्रस्थ','संन्यास'],ed:'जन्म तारीख टाका.',ea:'१–१५० वर्षे.',ef:'भविष्यात नाही.',eo:'वय जास्त हवे.'},
+  bn:{n:'বাংলা',e:'Bengali',f:'Noto Sans Bengali',sub:'পবিত্র আয়ুষ ঘড়ি',dobD:'জন্ম তারিখ',dobS:'Date of Birth',ageD:'প্রত্যাশিত আয়ু (বছর)',ageS:'Lifespan',bpmD:'হৃদস্পন্দন',bpmS:'BPM',note:'খালি — বয়স অনুযায়ী',purna:'পূর্ণ আয়ুষ ১০০',begin:'▶ শুরু করুন',chg:'ভাষা পরিবর্তন',lr:'অবশিষ্ট হৃদস্পন্দন',ul:'প্রাণ · অবশিষ্ট',birth:'জন্ম',moksha:'মোক্ষ',bl:'স্পন্দন/মিনিট',ash:[{d:'ব্রহ্মচর্য',t:'শিক্ষার্থী',p:'প্রথম'},{d:'গৃহস্থ',t:'গার্হস্থ্য',p:'দ্বিতীয়'},{d:'বানপ্রস্থ',t:'বনবাস',p:'তৃতীয়'},{d:'সন্ন্যাস',t:'বৈরাগ্য',p:'চতুর্থ'}],pn:['ব্রহ্মচর্য','গৃহস্থ','বানপ্রস্থ','সন্ন্যাস'],ed:'জন্ম তারিখ লিখুন।',ea:'১–১৫০।',ef:'ভবিষ্যতে নয়।',eo:'আয়ু বেশি হতে হবে।'},
+  te:{n:'తెలుగు',e:'Telugu',f:'Noto Sans Telugu',sub:'పవిత్ర ఆయుష్ గడియారం',dobD:'జన్మ తేదీ',dobS:'Date of Birth',ageD:'ఆయుష్కాలం (సం.)',ageS:'Lifespan',bpmD:'హృదయ స్పందన',bpmS:'BPM',note:'ఖాళీ — వయసు ప్రకారం',purna:'పూర్ణ ఆయుష్ ౧౦౦',begin:'▶ ప్రారంభించు',chg:'భాష మార్చు',lr:'మిగిలిన స్పందనలు',ul:'ప్రాణం · మిగిలిన',birth:'జన్మ',moksha:'మోక్షం',bl:'స్పందన/నిమిషం',ash:[{d:'బ్రహ్మచర్యం',t:'విద్యార్థి',p:'మొదటి'},{d:'గృహస్థం',t:'గృహస్థ',p:'రెండవ'},{d:'వానప్రస్థం',t:'అడవి',p:'మూడవ'},{d:'సన్న్యాసం',t:'విముక్తి',p:'నాల్గవ'}],pn:['బ్రహ్మచర్యం','గృహస్థం','వానప్రస్థం','సన్న్యాసం'],ed:'జన్మ తేదీ నమోదు.',ea:'1–150.',ef:'భవిష్యత్తు కాదు.',eo:'వయసు ఎక్కువగా.'},
+  ta:{n:'தமிழ்',e:'Tamil',f:'Noto Sans Tamil',sub:'புனித ஆயுஷ் கடிகாரம்',dobD:'பிறந்த தேதி',dobS:'Date of Birth',ageD:'எதிர்பார்க்கும் ஆயுள்',ageS:'Lifespan',bpmD:'இதயத்துடிப்பு',bpmS:'BPM',note:'காலி — வயதுக்கேற்ப',purna:'முழு ஆயுஷ் 100',begin:'▶ தொடங்கு',chg:'மொழி மாற்று',lr:'மீதமுள்ள துடிப்புகள்',ul:'பிராணன் · மீதம்',birth:'பிறப்பு',moksha:'மோட்சம்',bl:'துடிப்பு/நிமிடம்',ash:[{d:'பிரம்மச்சர்யம்',t:'மாணவர்',p:'முதல்'},{d:'கிரஹஸ்தம்',t:'இல்லறம்',p:'இரண்டாம்'},{d:'வானப்ரஸ்தம்',t:'காடு',p:'மூன்றாம்'},{d:'சந்யாசம்',t:'துறவு',p:'நான்காம்'}],pn:['பிரம்மச்சர்யம்','கிரஹஸ்தம்','வானப்ரஸ்தம்','சந்யாசம்'],ed:'தேதி உள்ளிடவும்.',ea:'1–150.',ef:'எதிர்காலம் இல்லை.',eo:'ஆயுள் அதிகம்.'},
+  kn:{n:'ಕನ್ನಡ',e:'Kannada',f:'Noto Sans Kannada',sub:'ಪವಿತ್ರ ಆಯುಷ್ ಗಡಿಯಾರ',dobD:'ಜನ್ಮ ದಿನಾಂಕ',dobS:'Date of Birth',ageD:'ನಿರೀಕ್ಷಿತ ಆಯಸ್ಸು',ageS:'Lifespan',bpmD:'ಹೃದಯ ಬಡಿತ',bpmS:'BPM',note:'ಖಾಲಿ — ವಯಸ್ಸಿಗೆ',purna:'ಪೂರ್ಣ ಆಯುಷ್ ೧೦೦',begin:'▶ ಪ್ರಾರಂಭಿಸಿ',chg:'ಭಾಷೆ ಬದಲು',lr:'ಉಳಿದ ಬಡಿತಗಳು',ul:'ಪ್ರಾಣ · ಉಳಿದ',birth:'ಜನ್ಮ',moksha:'ಮೋಕ್ಷ',bl:'ಬಡಿತ/ನಿಮಿಷ',ash:[{d:'ಬ್ರಹ್ಮಚರ್ಯ',t:'ವಿದ್ಯಾರ್ಥಿ',p:'ಪ್ರಥಮ'},{d:'ಗೃಹಸ್ಥ',t:'ಗೃಹಸ್ಥ',p:'ದ್ವಿತೀಯ'},{d:'ವಾನಪ್ರಸ್ಥ',t:'ವನ',p:'ತೃತೀಯ'},{d:'ಸಂನ್ಯಾಸ',t:'ತ್ಯಾಗ',p:'ಚತುರ್ಥ'}],pn:['ಬ್ರಹ್ಮಚರ್ಯ','ಗೃಹಸ್ಥ','ವಾನಪ್ರಸ್ಥ','ಸಂನ್ಯಾಸ'],ed:'ದಿನಾಂಕ ನಮೂದಿಸಿ.',ea:'1–150.',ef:'ಭವಿಷ್ಯ ಇಲ್ಲ.',eo:'ವಯಸ್ಸಿಗಿಂತ ಹೆಚ್ಚು.'},
+  ml:{n:'മലയാളം',e:'Malayalam',f:'Noto Sans Malayalam',sub:'പവിത്ര ആയുഷ് ഘടികാരം',dobD:'ജനന തീയതി',dobS:'Date of Birth',ageD:'പ്രതീക്ഷിത ആയുസ്സ്',ageS:'Lifespan',bpmD:'ഹൃദയ സ്പന്ദനം',bpmS:'BPM',note:'ഒഴിച്ചിടുക — പ്രായ',purna:'പൂർണ്ണ 100',begin:'▶ ആരംഭിക്കുക',chg:'ഭാഷ മാറ്റുക',lr:'ശേഷിക്കുന്ന സ്പന്ദനങ്ങൾ',ul:'പ്രാണൻ · ശേഷം',birth:'ജനനം',moksha:'മോക്ഷം',bl:'സ്പന്ദനം/മിനിറ്റ്',ash:[{d:'ബ്രഹ്മചര്യം',t:'വിദ്യാർഥി',p:'ഒന്നാം'},{d:'ഗൃഹസ്ഥം',t:'ഗൃഹസ്ഥ',p:'രണ്ടാം'},{d:'വാനപ്രസ്ഥം',t:'വനം',p:'മൂന്നാം'},{d:'സന്ന്യാസം',t:'ത്യാഗം',p:'നാലാം'}],pn:['ബ്രഹ്മചര്യം','ഗൃഹസ്ഥം','വാനപ്രസ്ഥം','സന്ന്യാസം'],ed:'തീയതി നൽകുക.',ea:'1–150.',ef:'ഭാവി ആകരുത്.',eo:'ആയുസ്സ് കൂടുതൽ.'},
+  gu:{n:'ગુજરાતી',e:'Gujarati',f:'Noto Sans Gujarati',sub:'પવિત્ર આયુષ ઘડિયાળ',dobD:'જન્મ તારીખ',dobS:'Date of Birth',ageD:'અપેક્ષિત આયુ (વર્ષ)',ageS:'Lifespan',bpmD:'હૃદયગતિ',bpmS:'BPM',note:'ખાલી — ઉંમર',purna:'પૂર્ણ ૧૦૦',begin:'▶ શરૂ',chg:'ભાષા',lr:'બાકી ધબ',ul:'પ્રાણ · ધબ',birth:'જન્મ',moksha:'મોક્ષ',bl:'ધ/મ',ash:[{d:'બ્રહ્મ',t:'વિ',p:'૧'},{d:'ગૃ',t:'ઘ',p:'૨'},{d:'વાન',t:'વ',p:'૩'},{d:'સ',t:'ત',p:'૪'}],pn:['બ્રહ્મ','ગૃ','વાન','સ'],ed:'જન્મ.',ea:'૧–૧૫૦.',ef:'ભ',eo:'ઉ'},
+  pa:{n:'ਪੰਜਾਬੀ',e:'Punjabi',f:'Noto Sans Gurmukhi',sub:'ਪਵਿੱਤਰ ਆਯੁਸ਼ ਘੜੀ',dobD:'ਜਨਮ ਤਾਰੀਖ਼',dobS:'Date of Birth',ageD:'ਉਮੀਦੀ ਉਮਰ (ਸਾਲ)',ageS:'Lifespan',bpmD:'ਧੜਕਣ',bpmS:'BPM',note:'ਖਾਲੀ — ਉਮਰ',purna:'ਪੂਰਨ ੧੦੦',begin:'▶ ਸ਼ੁਰੂ',chg:'ਭਾਸ਼ਾ',lr:'ਬਾਕੀ ਧੜਕਣਾਂ',ul:'ਪ੍ਰਾਣ · ਧੜਕਣ',birth:'ਜਨਮ',moksha:'ਮੋਕਸ਼',bl:'ਧੜ/ਮਿ',ash:[{d:'ਬ੍ਰਹਮ',t:'ਵਿਦਿ',p:'੧'},{d:'ਗ੍ਰਿਹ',t:'ਘਰ',p:'੨'},{d:'ਵਾਨ',t:'ਜੰ',p:'੩'},{d:'ਸੰਨਿ',t:'ਤਿਆ',p:'੪'}],pn:['ਬ੍ਰਹਮ','ਗ੍ਰਿਹ','ਵਾਨ','ਸੰਨਿ'],ed:'ਤਾਰੀਖ਼।',ea:'1–150।',ef:'ਭ।',eo:'ਉ।'},
+  or:{n:'ଓଡ଼ିଆ',e:'Odia',f:'Noto Sans Oriya',sub:'ପବିତ୍ର ଆୟୁଷ ଘଣ୍ଟି',dobD:'ଜନ୍ମ ତାରିଖ',dobS:'Date of Birth',ageD:'ଆଶା ଜୀବନ',ageS:'Lifespan',bpmD:'ସ୍ପଂଦନ',bpmS:'BPM',note:'ଖାଲି — ବୟସ',purna:'ପୂର୍ଣ ୧୦୦',begin:'▶ ଆରମ୍ଭ',chg:'ଭାଷା',lr:'ଅବଶିଷ୍ଟ ସ୍ପଂଦନ',ul:'ପ୍ରାଣ · ଶେଷ',birth:'ଜନ୍ମ',moksha:'ମୋକ୍ଷ',bl:'ସ୍ପ/ମ',ash:[{d:'ବ୍ରହ୍ମ',t:'ଛ',p:'୧'},{d:'ଗୃ',t:'ଘ',p:'୨'},{d:'ବାନ',t:'ବ',p:'୩'},{d:'ସ',t:'ତ',p:'୪'}],pn:['ବ୍ରହ୍ମ','ଗୃ','ବାନ','ସ'],ed:'ତାରିଖ।',ea:'1–150।',ef:'ଭ।',eo:'ଆ।'},
+  en:{n:'English',e:'English',f:'IM Fell English',sub:'Sacred Lifespan Clock',dobD:'Date of Birth',dobS:'',ageD:'Expected Lifespan (years)',ageS:'',bpmD:'Custom BPM (optional)',bpmS:'',note:'Leave blank for age-accurate rate',purna:'Purna Ayush 100',begin:'▶ BEGIN YOUR AYUSH',chg:'Change Language',lr:'Heartbeats Remaining',ul:'Prana · Heartbeats Left',birth:'Birth',moksha:'Moksha',bl:'BPM',ash:[{d:'Brahmacharya',t:'The Student',p:'First Ashram'},{d:'Grihastha',t:'The Householder',p:'Second Ashram'},{d:'Vanaprastha',t:'The Forest Dweller',p:'Third Ashram'},{d:'Sannyasa',t:'The Renunciant',p:'Fourth Ashram'}],pn:['Brahmacharya','Grihastha','Vanaprastha','Sannyasa'],ed:'Please enter your date of birth.',ea:'Enter lifespan between 1 and 150.',ef:'Birth date cannot be in the future.',eo:'Lifespan must exceed current age.'}
+};
+
+const AC=['#f6c90e','#ff7c2a','#e03c5a','#c4a8ff'];
+let CL='hi',L=LANGS.hi,rafId,lastAI=-1,qIdx=0,qTimer=null;
+
+// ── STARS ──
+(()=>{
+  const c=document.getElementById('stars-c'),ctx=c.getContext('2d');let s=[];
+  const r=()=>{c.width=innerWidth;c.height=innerHeight;
+    s=Array.from({length:180},()=>({x:Math.random()*c.width,y:Math.random()*c.height,
+      r:Math.random()*1.1+.2,a:Math.random(),da:Math.random()*.003+.001}))};
+  const d=()=>{ctx.clearRect(0,0,c.width,c.height);
+    s.forEach(p=>{p.a+=p.da;if(p.a>1||p.a<0)p.da*=-1;
+      ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+      ctx.fillStyle=`rgba(232,220,196,${(p.a*.55).toFixed(2)})`;ctx.fill()});
+    requestAnimationFrame(d)};
+  r();d();window.addEventListener('resize',r);
+})();
+
+// ── LANG GRID ──
+function buildGrid(){
+  const g=document.getElementById('lang-grid');g.innerHTML='';
+  Object.keys(LANGS).forEach(c=>{
+    const ld=LANGS[c];
+    const b=document.createElement('button');
+    b.className='lang-btn'+(c===CL?' sel':'');
+    b.innerHTML=`<span class="ln" style="font-family:'${ld.f}',serif">${ld.n}</span><span class="le">${ld.e}</span>`;
+    b.onclick=()=>{CL=c;L=LANGS[c];applyL();showS('setup')};
+    g.appendChild(b);
+  });
+}
+
+function applyL(){
+  const ff=`'${L.f}',serif`;
+  document.getElementById('s-sub').textContent=L.sub;
+  document.getElementById('l-dob-d').textContent=L.dobD;
+  document.getElementById('l-dob-s').textContent=L.dobS;
+  document.getElementById('l-age-d').textContent=L.ageD;
+  document.getElementById('l-age-s').textContent=L.ageS;
+  document.getElementById('l-bpm-d').textContent=L.bpmD;
+  document.getElementById('l-bpm-s').textContent=L.bpmS;
+  document.getElementById('bpm-note').textContent=L.note;
+  document.getElementById('purna-btn').textContent=L.purna;
+  document.getElementById('begin-btn').textContent=L.begin;
+  document.getElementById('chg-lang-btn').textContent='🌐 '+L.chg;
+  ['setup-card','begin-btn'].forEach(id=>{
+    const el=document.getElementById(id);if(el)el.style.fontFamily=ff;
+  });
+}
+
+function showS(id){
+  ['lang-screen','setup','clock'].forEach(s=>document.getElementById(s).classList.add('hidden'));
+  document.getElementById(id).classList.remove('hidden');
+}
+
+// presets
+document.querySelectorAll('.pre-btn').forEach(b=>{
+  b.onclick=()=>{document.querySelectorAll('.pre-btn').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on');document.getElementById('exp-age').value=b.dataset.a};
+});
+document.getElementById('exp-age').oninput=()=>
+  document.querySelectorAll('.pre-btn').forEach(b=>b.classList.remove('on'));
+document.getElementById('chg-lang-btn').onclick=()=>{buildGrid();showS('lang-screen')};
+document.getElementById('begin-btn').onclick=startClock;
+
+function bpmA(a){return a<25?75:a<50?72:a<75?70:68}
+
+function startClock(){
+  const bd=document.getElementById('birthdate').value;
+  const ea=parseFloat(document.getElementById('exp-age').value);
+  const cb=parseFloat(document.getElementById('cust-bpm').value);
+  const err=document.getElementById('err-msg');
+  if(!bd){err.textContent=L.ed;return}
+  const bdo=new Date(bd);
+  if(isNaN(bdo)){err.textContent=L.ed;return}
+  if(!ea||ea<1||ea>150){err.textContent=L.ea;return}
+  const ay=(Date.now()-bdo)/(1000*60*60*24*365.25);
+  if(ay<0){err.textContent=L.ef;return}
+  if(ay>=ea){err.textContent=L.eo;return}
+  err.textContent='';
+  const bpm=(!isNaN(cb)&&cb>=40&&cb<=200)?cb:bpmA(ay);
+  const tot=ea*365.25*24*60*bpm,bas=tot-ay*365.25*24*60*bpm,st=Date.now();
+  try{localStorage.setItem('ayush5',JSON.stringify({bd,ea,cb:isNaN(cb)?'':cb,lang:CL}))}catch(e){}
+  showS('clock');
+  runClock({bdo,ea,bpm,bas,st});
+}
+
+// ════════════════════════════════════════════
+// CLOCK ENGINE
+// KEY INSIGHT: at 72 BPM = 1.2 beats/sec
+//   • last digit  changes every ~0.83s  (10 / 12 beats)
+//   • 2nd-last    changes every ~8.3s
+//   • 3rd-last    changes every ~83s
+// We track exact float beats and update DOM every beat interval
+// ════════════════════════════════════════════
+function runClock({bdo,ea,bpm,bas,st}){
+
+  const secPerBeat=60/bpm;
+
+  // Beat pulse — fire once per beat
+  let lastBeatFloor=-1;
+
+  // ── QUOTE SYSTEM ──
+  // Quotes stored as {s:Sanskrit, src:source, h:Hindi, e:English}
+  // Sequential order (Gita → Mahabharata → Ramayana → Upanishads → Chanakya)
+  // ── OFFLINE TRANSLATION ──
+  // All translations are embedded in quotes or resolved locally — zero network needed.
+  // hi/mr/sa → q.h (Hindi/Marathi/Sanskrit) | en → q.e | others → q[lang] or English
+  function getTranslation(q, lang){
+    if(lang==='hi'||lang==='mr'||lang==='sa') return Promise.resolve(q.h);
+    if(lang==='en') return Promise.resolve(q.e);
+    // Use embedded translation if present on the quote object
+    if(q[lang] && q[lang].length > 2) return Promise.resolve(q[lang]);
+    // Fallback: show English (universally understood, better than random Hindi for non-Hindi speakers)
+    return Promise.resolve(q.e);
+  }
+
+  let quoteOrder = Array.from({length:QUOTES.length},(_,i)=>i); // sequential
+
+  function showQ(){
+    const q=QUOTES[quoteOrder[qIdx % quoteOrder.length]];
+    const wrap=document.getElementById('quote-wrap');
+    wrap.classList.remove('q-fade-in');
+    wrap.classList.add('q-fade-out');
+    setTimeout(async ()=>{
+      document.getElementById('q-skt').textContent=q.s;
+      document.getElementById('q-src').textContent=q.src;
+      // Show Hindi immediately while native translation loads
+      const immediate = (CL === 'en') ? q.e : q.h;
+      document.getElementById('q-tr').textContent=immediate;
+      wrap.classList.remove('q-fade-out');
+      wrap.classList.add('q-fade-in');
+      // Fetch native translation async (already cached after first view)
+      const native = await getTranslation(q, CL);
+      document.getElementById('q-tr').textContent=native;
+      qIdx++;
+      // After full cycle, start over sequentially
+      if(qIdx > 0 && qIdx % quoteOrder.length === 0){
+        qIdx = 0;
+      }
+    },420);
+  }
+  showQ();
+  qTimer=setInterval(showQ,30000);
+
+  // Number DOM: build spans once
+  const nw=document.getElementById('num-wrap');
+  nw.innerHTML='';
+  // We'll store refs to each digit span and comma spans
+  // Number can be up to 10 digits: X,XXX,XXX,XXX
+  // Positions 0-9 left to right; last 2 (pos 8,9) are red hot
+  // We dynamically build based on magnitude
+  let digitSpans=[];
+  let lastRenderedStr='';
+
+  function buildNumDOM(str){
+    // str: digits only, no commas, e.g. "1350087280"
+    nw.innerHTML='';
+    digitSpans=[];
+    const formatted=formatWithCommas(str);
+    // Walk formatted string
+    for(let i=0;i<formatted.length;i++){
+      const ch=formatted[i];
+      if(ch===','){
+        const s=document.createElement('span');
+        s.className='nc';s.textContent=',';
+        nw.appendChild(s);
+      } else {
+        // is this one of the last 2 digits?
+        // count digits position from right in original str
+        const digitPosFromRight=str.length-1-(formatted.length-1-i-(formatted.slice(0,i).split(',').length));
+        // simpler: track digit index
+        const span=document.createElement('span');
+        const rawIdx=digitSpans.length; // 0-based digit index from LEFT
+        digitSpans.push(span);
+        nw.appendChild(span);
+      }
+    }
+    lastRenderedStr=str;
+    refreshNumStyle(str);
+  }
+
+  function formatWithCommas(s){
+    let r='';
+    for(let i=0;i<s.length;i++){
+      if(i>0&&(s.length-i)%3===0)r+=',';
+      r+=s[i];
+    }
+    return r;
+  }
+
+  function refreshNumStyle(str){
+    digitSpans.forEach((sp,i)=>{
+      sp.textContent=str[i];
+      sp.className='nd';
+    });
+  }
+
+  function animateChangedDigits(oldStr,newStr){
+    if(oldStr===newStr)return;
+    if(oldStr.length!==newStr.length){
+      buildNumDOM(newStr);
+      return;
+    }
+    for(let i=0;i<newStr.length;i++){
+      if(newStr[i]!==oldStr[i]){
+        digitSpans[i].textContent=newStr[i];
+        digitSpans[i].className='nd';
+      }
+    }
+  }
+
+  let prevStr='';
+  let lastUpdateTime=0;
+
+  function update(){
+    const now=Date.now();
+    const elSec=(now-st)/1000;
+    const rem=Math.max(0,bas-elSec*bpm);
+    const remFloor=Math.floor(rem);
+
+    // Beat detection — kept for timing reference only
+    const beatNum=Math.floor(elSec/secPerBeat);
+    if(beatNum!==lastBeatFloor){
+      lastBeatFloor=beatNum;
+    }
+
+    // ── Update number every ~0.25s (smooth enough, not blurring) ──
+    // But ONLY the digits that actually changed since last frame
+    // Last digit changes at bpm/60 per second = ~1.2x/sec
+    // 2nd last at ~0.12x/sec — totally calm
+    if(now-lastUpdateTime>=250){
+      lastUpdateTime=now;
+
+      const newStr=String(remFloor);
+
+      if(newStr!==prevStr){
+        if(!prevStr||prevStr.length!==newStr.length){
+          buildNumDOM(newStr);
+        } else {
+          animateChangedDigits(prevStr,newStr);
+        }
+        prevStr=newStr;
+      }
+
+      // Life pct
+      const nowAge=(now-bdo.getTime())/(1000*60*60*24*365.25);
+      const lp=Math.min(1,nowAge/ea);
+      const ai=Math.min(3,Math.floor(lp*4));
+
+      if(ai!==lastAI){
+        lastAI=ai;
+        const ad=L.ash[ai];
+        const ff=`'${L.f}',serif`;
+        document.documentElement.style.setProperty('--ac',AC[ai]);
+
+      }
+
+      // Labels
+      document.getElementById('ctr-lbl').textContent=L.lr;
+      document.getElementById('ctr-unit').textContent=L.ul;
+      document.getElementById('p-birth').textContent=L.birth;
+      document.getElementById('p-moksha').textContent=L.moksha;
+
+      // Progress
+      const pct=(lp*100).toFixed(1);
+      document.getElementById('prog-fill').style.width=pct+'%';
+      document.getElementById('prog-fill').style.background=
+        `linear-gradient(90deg,${AC[ai]},rgba(255,255,255,.55))`;
+      document.getElementById('prog-fill').style.boxShadow=`0 0 8px ${AC[ai]}`;
+      document.getElementById('p-pct').textContent=pct+'%';
+    }
+
+    rafId=requestAnimationFrame(update);
+  }
+
+  update();
+}
+
+// ── INIT ──
+try{
+  const sv=JSON.parse(localStorage.getItem('ayush5')||'null');
+  if(sv){
+    if(sv.lang&&LANGS[sv.lang]){CL=sv.lang;L=LANGS[CL]}
+    if(sv.bd)document.getElementById('birthdate').value=sv.bd;
+    if(sv.ea)document.getElementById('exp-age').value=sv.ea;
+    if(sv.cb!==''&&sv.cb!=null)document.getElementById('cust-bpm').value=sv.cb;
+  }
+}catch(e){}
+buildGrid();applyL();showS('lang-screen');
+navigator.wakeLock&&navigator.wakeLock.request('screen').catch(()=>{});
+// ── PWA MANIFEST (inline, no separate file needed) ──
+(function(){
+  const manifest = {
+    name: 'आयुष — Sacred Life Clock',
+    short_name: 'Ayush',
+    description: 'Your remaining heartbeats — a sacred lifespan clock',
+    start_url: './',
+    display: 'fullscreen',
+    orientation: 'portrait',
+    background_color: '#04010a',
+    theme_color: '#04010a',
+    icons: [
+      { src: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" fill="%2304010a"/><text y="340" x="80" font-size="340" fill="%23f6c90e">ॐ</text></svg>', sizes: 'any', type: 'image/svg+xml', purpose: 'any maskable' }
+    ]
+  };
+  const blob = new Blob([JSON.stringify(manifest)], {type:'application/manifest+json'});
+  const url = URL.createObjectURL(blob);
+  document.getElementById('pwa-manifest').href = url;
+})();
+
+// ── SERVICE WORKER — full offline-first caching ──
+if('serviceWorker' in navigator){
+  const SW_VERSION = 'ayush-v6';
+  const sw = `
+const V = '${SW_VERSION}';
+const FONTS = [
+  'https://fonts.googleapis.com/css2?family=Tiro+Devanagari+Sanskrit:ital@0;1&family=Noto+Serif+Devanagari:wght@400;700&family=Noto+Sans+Devanagari:wght@400;600&family=Noto+Sans+Tamil:wght@400;600&family=Noto+Sans+Telugu:wght@400;600&family=Noto+Sans+Kannada:wght@400;600&family=Noto+Sans+Malayalam:wght@400;600&family=Noto+Sans+Bengali:wght@400;600&family=Noto+Sans+Gujarati:wght@400;600&family=Noto+Sans+Gurmukhi:wght@400;600&family=Noto+Sans+Oriya:wght@400;600&family=Cinzel+Decorative:wght@700;900&family=IM+Fell+English:ital@0;1&display=swap'
+];
+
+self.addEventListener('install', e => {
+  self.skipWaiting();
+  e.waitUntil(
+    caches.open(V).then(cache => {
+      // Pre-cache the app shell (this HTML file)
+      return cache.addAll(FONTS).catch(() => {});
+    })
+  );
+});
+
+self.addEventListener('activate', e => {
+  e.waitUntil(
+    caches.keys().then(keys =>
+      Promise.all(keys.filter(k => k !== V).map(k => caches.delete(k)))
+    ).then(() => clients.claim())
+  );
+});
+
+self.addEventListener('fetch', e => {
+  const url = new URL(e.request.url);
+  // Always serve fonts from cache if available
+  if(url.hostname.includes('fonts.')) {
+    e.respondWith(
+      caches.open(V).then(cache =>
+        cache.match(e.request).then(cached => {
+          if(cached) return cached;
+          return fetch(e.request).then(res => {
+            if(res.ok) cache.put(e.request, res.clone());
+            return res;
+          }).catch(() => cached || new Response('', {status: 503}));
+        })
+      )
+    );
+    return;
+  }
+  // For the main app — cache-first, network fallback
+  e.respondWith(
+    caches.open(V).then(cache =>
+      cache.match(e.request).then(cached => {
+        const networkFetch = fetch(e.request).then(res => {
+          if(res.ok && res.type !== 'opaque') cache.put(e.request, res.clone());
+          return res;
+        }).catch(() => cached);
+        return cached || networkFetch;
+      })
+    )
+  );
+});
+`;
+  try {
+    const blob = new Blob([sw], {type:'text/javascript'});
+    navigator.serviceWorker.register(URL.createObjectURL(blob))
+      .then(reg => {
+        // Self-cache this HTML page once SW is ready
+        reg.addEventListener('updatefound', () => {});
+        if(reg.active) {
+          caches.open(SW_VERSION).then(cache => cache.add(location.href));
+        }
+        navigator.serviceWorker.ready.then(() => {
+          caches.open(SW_VERSION).then(cache => cache.add(location.href));
+        });
+      })
+      .catch(()=>{});
+  } catch(e){}
+}
+</script>
+</body>
+</html>
