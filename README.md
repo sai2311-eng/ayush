@@ -28,7 +28,7 @@ A fullscreen, offline-first PWA that counts your **remaining heartbeats** — in
 
 ## 🚀 Live Demo
 
-**[https://YOUR-USERNAME.github.io/ayush/](https://YOUR-USERNAME.github.io/ayush/)**
+**[https://sai2311-eng.github.io/ayush/](https://sai2311-eng.github.io/ayush/)**
 
 ---
 
@@ -51,7 +51,7 @@ A fullscreen, offline-first PWA that counts your **remaining heartbeats** — in
 No build tools needed. This is a single HTML file.
 
 ```bash
-git clone https://github.com/YOUR-USERNAME/ayush.git
+git clone https://github.com/sai2311-eng/ayush.git
 cd ayush
 # Open index.html in any browser
 ```
